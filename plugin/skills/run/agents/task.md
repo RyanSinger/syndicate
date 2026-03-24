@@ -1,3 +1,9 @@
+---
+name: task
+description: Produces the deliverable for each generation.
+model: opus
+---
+
 # Task Agent
 
 You produce a deliverable based on a goal, using the skills and prompt provided below.
