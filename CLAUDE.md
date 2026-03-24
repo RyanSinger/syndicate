@@ -13,8 +13,8 @@ Two modes: **job** (converge and dissolve) and **venture** (converge, ship, disc
 The core design borrows structural separation from TurkoMatic (2011) to prevent derailment:
 
 - **Meta-agent** (the main Claude session): diagnoses weaknesses, modifies skills/prompts/criteria, promotes learnings to agents or domain skills
-- **Task agent** (subagent via `claude -p`): produces the deliverable each generation. Starts on haiku, upgrades only with evidence
-- **Coherence agent** (subagent via `claude -p`, always haiku): watches fitness trajectories and complexity metrics only. Never sees code, prompts, or skills. Its prompt (`agents/coherence.md`) is fixed and must not be modified
+- **Task agent** (native subagent, starts on opus): produces the deliverable each generation. Downgrade to sonnet with evidence
+- **Coherence agent** (native subagent, always sonnet, zero tool access): watches fitness trajectories and complexity metrics only. Never sees code, prompts, or skills. Its prompt (`agents/coherence.md`) is fixed and must not be modified
 
 The syndicate communicates with the user at defined moments: scope of work before gen 1, round boundary reports after each discovery phase, and a dissolution report on stopping. Mid-round, it runs autonomously.
 
@@ -33,7 +33,7 @@ The coherence firewall is the key architectural invariant. Without it, the syste
 
 ## Key Conventions
 
-- Subagents are invoked with `CLAUDECODE= claude -p "..."` (stripping env var enables nesting)
+- Subagents are invoked using the Agent tool. Plugin agents (`syndicate:task`, `syndicate:coherence`) have static system prompts; dynamic context goes in the prompt parameter
 - Metrics files (`scores.jsonl`, `complexity.jsonl`, `coherence-log.jsonl`) are append-only JSONL in `syndicate/metrics/`
 - Branch records (`branches.jsonl`) are append-only JSONL in `syndicate/archive/`
 - Each generation gets its own git branch (`gen-N`), branched from the best-scoring non-pruned parent
