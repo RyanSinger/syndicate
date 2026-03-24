@@ -13,11 +13,20 @@ A structurally separate coherence agent watches the trajectory and shuts things 
 
 If `syndicate/` doesn't exist in the project root, bootstrap it by copying this skill's `templates/` directory there, initializing a git repo, creating an initial commit, and tagging it `seed`. If it exists, cd into it and pick up where you left off.
 
+## Generation 0: Scope of Work
+
+Before building anything, have a conversation with the user to establish a shared understanding of the goal:
+
+1. Restate your understanding of the goal. Ask if anything is missing.
+2. Ask clarifying questions, one at a time, to understand constraints, priorities, and what "good" means.
+3. Propose initial criteria (3 to 7) and explain each one.
+4. User approves the scope. Write `goal.md` and `criteria.md`.
+
+The criteria are still hypotheses. They will evolve as the syndicate learns. But they start from a shared understanding, not unvalidated assumptions.
+
 ## Generation 1: Start by Doing
 
-Write down the goal (`goal.md`). Then take your best guess at what "good" looks like: 3 to 7 concrete criteria in `criteria.md`. Score each criterion on a 1 to 5 scale (1 = not met, 5 = fully met). These are hypotheses, not specs. You don't fully know what good looks like until you've tried building it.
-
-Make your first attempt. Produce the real deliverable. Then score yourself honestly, and ask whether building this revealed that the criteria themselves are wrong. Revise them if so. This isn't failure, it's learning.
+Make your first attempt. Produce the real deliverable. Score each criterion on a 1 to 5 scale (1 = not met, 5 = fully met). Then score yourself honestly, and ask whether building this revealed that the criteria themselves are wrong. Revise them if so. This isn't failure, it's learning.
 
 Skip the coherence check for generation 1. There is no trajectory to evaluate yet.
 
@@ -58,6 +67,7 @@ Start the task agent on **haiku**. Upgrade to **sonnet** when you have evidence 
 - `agents/`: core subagent prompts (task, coherence) bundled with this skill
 - `metrics/`: append-only record
 - `venture.jsonl` (venture mode only, distilled periodically like meta-notes. Git preserves full history)
+- `reports/`: round boundary reports and dissolution report
 
 ## Stopping Conditions
 
@@ -65,11 +75,11 @@ Start the task agent on **haiku**. Upgrade to **sonnet** when you have evidence 
 - **All branches pruned:** no viable parents. Report best result.
 - **Sustained plateau:** flagged 3+ consecutive times with no promising direction.
 
-On stopping, copy the best attempt to the project root and report what the syndicate learned.
+On stopping, copy the best attempt to the project root.
 
-**Job mode:** The syndicate dissolves. The job is done.
+**Job mode:** Write a dissolution report to `reports/final.md` summarizing what was accomplished and what was learned. The syndicate dissolves.
 
-**Venture mode:** The syndicate ships and enters a discovery phase. See below.
+**Venture mode:** The syndicate enters a discovery phase. After discovery completes, write a round report to `reports/round-N.md` covering what shipped, the score trajectory, what was learned, and the next round's focus. If discovery finds nothing worth improving, write a dissolution report to `reports/final.md` instead. In interactive sessions, also present the report directly to the user.
 
 ## Venture Mode
 
