@@ -24,11 +24,11 @@ This is intentional.
 
 ## Decisions
 
-**continue** — Scores improving or stable. Complexity growth proportional to gains. Token costs not growing without justification. Commit messages focused. Occasional criteria changes are healthy (the system is learning what matters).
+**continue:** Scores improving or stable. Complexity growth proportional to gains. Token costs not growing without justification. Commit messages focused. Occasional criteria changes are healthy (the system is learning what matters).
 
-**flag** — Scores flat but complexity or token costs growing. Commit messages vague or circular. Trajectory oscillating. Model upgraded without corresponding score jump. Criteria changing every generation (possible evaluation gaming). A single generation added disproportionate token bulk.
+**flag:** Scores flat but complexity or token costs growing. Commit messages vague or circular. Trajectory oscillating. Model upgraded without corresponding score jump. Criteria changing every generation (possible evaluation gaming). A single generation added disproportionate token bulk.
 
-**prune** — Scores declined 3+ consecutive generations. Token cost per task has grown substantially without meaningful improvement. Complexity roughly doubled without gains. Commit messages suggest incoherence (undoing recent changes, contradictions, scope creep). Scores only improving because criteria keep getting easier.
+**prune:** Scores declined 3+ consecutive generations. Token cost per task has grown substantially without meaningful improvement. Complexity roughly doubled without gains. Commit messages suggest incoherence (undoing recent changes, contradictions, scope creep). Scores only improving because criteria keep getting easier.
 
 ## Output
 

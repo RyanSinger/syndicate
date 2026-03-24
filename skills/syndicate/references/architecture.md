@@ -7,7 +7,7 @@
 **TurkoMatic** (Kulkarni, Can & Hartmann, 2011) built a structurally identical system using Mechanical Turk crowds as both labor and management. Key findings:
 
 - Without a separate observer, the system reliably failed
-- Dominant failure: *derailment* — recursive self-organization spiraling into complexity without coherence
+- Dominant failure: *derailment*: recursive self-organization spiraling into complexity without coherence
 - Fix: a structurally separate requester maintaining coherence while the system evolved
 - Workers self-assessing tractability prevented runaway decomposition
 
@@ -23,7 +23,7 @@ The firewall: the coherence agent's instructions are bundled with this skill and
 
 ## Lineage
 
-- **TurkoMatic** (2011) — Discovered derailment. Fixed it with structural separation.
-- **Darwin Gödel Machine** (2025) — Open-ended evolution of self-improving coding agents.
-- **HyperAgents** (2026) — Self-referential meta-agent. Meta-level improvements transfer across domains.
-- **Syndicate** — Adds the coherence layer. Criteria evolve through learning-by-doing. Claude Code as native substrate. Supports two lifecycle modes: **jobs** (converge and dissolve) and **ventures** (converge, ship, discover the next improvement, repeat). The three-tier governance is identical in both — venture mode only changes what happens at convergence.
+- **TurkoMatic** (2011): Discovered derailment. Fixed it with structural separation.
+- **Darwin Gödel Machine** (2025): Open-ended evolution of self-improving coding agents.
+- **HyperAgents** (2026): Self-referential meta-agent. Meta-level improvements transfer across domains.
+- **Syndicate**: Adds the coherence layer. Criteria evolve through learning-by-doing. Claude Code as native substrate. Supports two lifecycle modes: **jobs** (converge and dissolve) and **ventures** (converge, ship, discover the next improvement, repeat). The three-tier governance is identical in both. Venture mode only changes what happens at convergence.
