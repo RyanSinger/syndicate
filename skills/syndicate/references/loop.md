@@ -120,7 +120,7 @@ Read `archive/branches.jsonl`. Highest-scoring non-pruned branch ~70% of the tim
 ## Promoting Learnings
 
 After recording observations in meta-notes, evaluate whether any pattern is ready for promotion. Promote when:
-- **Recurrence** — the same pattern has come up 3+ times
+- **Recurrence** — the pattern keeps coming up
 - **Actionability** — it's reusable, not just an observation
 
 The meta-agent decides the form:
@@ -164,6 +164,55 @@ Learned agents and domain skills are living documents. Revise them as understand
 ### Retiring Learned Agents
 
 Retire learned agents that are no longer pulling their weight. Set `retired: true` in the registry. No fixed rules — the coherence agent monitors complexity growth and will flag if proliferation outpaces improvement.
+
+## Importing External Skills
+
+Domain skills can come from installed Claude Code plugins, not just local promotion. Before writing a new domain skill from scratch, check whether an installed plugin already publishes a relevant one.
+
+### Finding Skills
+
+Browse `~/.claude/plugins/` for installed plugins. Look in each plugin's `skills/` directory for skill files and references that match the syndicate's current needs.
+
+### Import Procedure
+
+1. Read the skill file from the installed plugin.
+2. Trim to the minimum useful content — every word costs tokens across every generation.
+3. Write to `skills/domain/<name>.md` with a provenance header:
+
+```markdown
+# <Skill Name>
+
+> Imported from plugin:<plugin-name>. Generation <N>.
+
+<trimmed content>
+```
+
+4. Append to `skills-manifest.jsonl`:
+
+```jsonl
+{"name": "<name>", "origin": "import", "source_plugin": "<plugin-name>", "source_path": "<path within plugin>", "imported_at": "gen-<N>", "diverged": false, "last_revised": "gen-<N>", "retired": false}
+```
+
+5. Note in `meta-notes.md`: `Imported skill: <name> from <plugin> (reason: <one sentence>)`.
+
+### Evolving Imported Skills
+
+Once imported, a skill belongs to this syndicate. Edit it freely as understanding deepens. When you modify an imported skill, set `diverged: true` and update `last_revised` in `skills-manifest.jsonl`. There is no upstream sync — provenance metadata exists so you can check the source later if needed, not for automatic updates.
+
+### Promoting Imported Skills to Agents
+
+Imported skills follow the same promotion path as locally-grown skills. When it becomes clear a skill is being used procedurally — it takes input, produces output, and works independently — promote it to a learned agent using the standard procedure. Optionally retire the domain skill in `skills-manifest.jsonl` if the agent fully subsumes it. If the skill still has knowledge value beyond the procedure, keep both.
+
+### skills-manifest.jsonl
+
+Tracks provenance and lifecycle for all domain skills — both imported and locally promoted. One line per skill.
+
+```jsonl
+{"name": "<name>", "origin": "import", "source_plugin": "<plugin>", "source_path": "<path>", "imported_at": "gen-<N>", "diverged": false, "last_revised": "gen-<N>", "retired": false}
+{"name": "<name>", "origin": "local", "promoted_at": "gen-<N>", "last_revised": "gen-<N>", "retired": false}
+```
+
+When promoting a local learning to a domain skill (instead of a learned agent), also append a line here with `"origin": "local"`.
 
 ## Meta-Notes Distillation
 
@@ -235,9 +284,10 @@ syndicate/
 ├── criteria.md          # Acceptance criteria (evolves)
 ├── meta-notes.md        # Persistent memory (distilled periodically)
 ├── venture.jsonl         # Round history (venture mode only, append-only)
+├── skills-manifest.jsonl # Provenance and lifecycle for domain skills
 ├── skills/
 │   ├── approach.md
-│   └── domain/          # Domain-specific skills (evolves, promotion target)
+│   └── domain/          # Domain-specific skills (promoted or imported)
 ├── prompts/
 │   └── task.md
 ├── learned-agents/      # Specialized agents promoted from learnings (evolves)
