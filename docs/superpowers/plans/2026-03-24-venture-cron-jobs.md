@@ -31,7 +31,8 @@ Create `skills/syndicate/templates/state.json`:
   "flag_streak": 0,
   "last_run": null,
   "last_shipped_gen": null,
-  "cron_enabled": false
+  "cron_enabled": false,
+  "notify": null
 }
 ```
 
@@ -45,6 +46,7 @@ Field definitions:
 - `last_run`: ISO timestamp of last completed generation/discovery.
 - `last_shipped_gen`: branch name of last shipped best attempt (e.g. "gen-12").
 - `cron_enabled`: whether cron runner should execute. Defaults false.
+- `notify`: shell command for notifications (receives report text on stdin), or null for no notification. Default null.
 
 ---
 
@@ -125,8 +127,9 @@ You are resuming a venture syndicate for one step. Read state, execute the next 
 ## Startup
 
 1. Read `syndicate/state.json`. If `phase` is `paused` or `dissolved`, exit immediately with no changes.
-2. Read `syndicate/goal.md`, `syndicate/criteria.md`, `syndicate/meta-notes.md`.
-3. Read the skill definition at `skills/syndicate/SKILL.md` and procedural reference at `skills/syndicate/references/loop.md`.
+2. If `current_generation` < 1, log "Scope of work not completed. Run gen 1 interactively first." and exit with no changes.
+3. Read `syndicate/goal.md`, `syndicate/criteria.md`, `syndicate/meta-notes.md`.
+4. Read the skill definition at `skills/syndicate/SKILL.md` and procedural reference at `skills/syndicate/references/loop.md`.
 
 ## If phase is "evolving"
 
@@ -145,7 +148,9 @@ Run ONE generation following the "Every Generation After That" procedure in SKIL
 11. **Record learnings** in `meta-notes.md`. Promote patterns if ready.
 12. Git commit: `git add -A && git commit -m "gen-<N>: <one sentence>"`.
 13. **Update `state.json`**: increment generation, update streaks, set timestamp.
-14. **Check stopping conditions**: if `convergence_streak` >= 2, or `flag_streak` >= 3, or all branches pruned, set `phase` to `"discovery"` and set `last_shipped_gen`.
+14. **Check stopping conditions**: if `convergence_streak` >= 2, or `flag_streak` >= 3, or all branches pruned:
+    - If job mode, or plateau/all-pruned in any mode: write dissolution report to `syndicate/reports/final.md`, set `phase` to `"dissolved"`.
+    - If venture mode convergence: set `phase` to `"discovery"` and set `last_shipped_gen`. No report yet (discovery hasn't run).
 
 ## If phase is "discovery"
 
@@ -154,13 +159,14 @@ Run the discovery phase following the procedure in loop.md:
 1. Read the shipped deliverable (`attempts/<last_shipped_gen>/`).
 2. Read `syndicate/venture.jsonl` if it exists.
 3. Identify 3-5 candidate improvements.
-4. Pick the highest-value one. If nothing is worth improving, set `phase` to `"dissolved"` in state.json, git commit, and exit.
+4. Pick the highest-value one. If nothing is worth improving, write dissolution report to `syndicate/reports/final.md`, set `phase` to `"dissolved"` in state.json, git commit, and exit.
 5. Rewrite `criteria.md` for the new focus.
 6. Append to `meta-notes.md` with `--- Round N ---` separator.
 7. Append to `venture.jsonl`.
 8. Distill `meta-notes.md` if it's getting long.
 9. Update `state.json`: increment `current_round`, set `phase` to `"evolving"`, reset `convergence_streak` to 0.
-10. Git commit: `git add -A && git commit -m "round-<N>: discovery - <focus>"`.
+10. Write round report to `syndicate/reports/round-N.md` following the Round Report Format in loop.md.
+11. Git commit: `git add -A && git commit -m "round-<N>: discovery - <focus>"`.
 
 ## Rules
 
@@ -169,6 +175,7 @@ Run the discovery phase following the procedure in loop.md:
 - The coherence agent always runs on haiku. Start the task agent on haiku unless prior meta-notes show evidence the model is the ceiling.
 - Never modify `agents/coherence.md` or `agents/task.md` (these are fixed, bundled with the skill).
 - If any subagent invocation fails, log the error in meta-notes, set the generation as a failed attempt with score 0, and proceed with coherence check.
+- Write round reports to `syndicate/reports/round-N.md` and dissolution reports to `syndicate/reports/final.md` as specified in the loop reference.
 ```
 
 ---
@@ -233,6 +240,7 @@ echo $$ > "$LOCK_FILE"
 log "Starting cron run. Phase: $PHASE"
 
 # Run one step
+RUN_MARKER=$(mktemp)
 cd "$PROJECT_DIR"
 RUNNER_PROMPT=$(cat "$SKILL_DIR/agents/cron-runner.md")
 
@@ -242,6 +250,17 @@ CLAUDECODE= claude -p "$RUNNER_PROMPT" \
   >> "$LOG_FILE" 2>&1
 
 EXIT_CODE=$?
+
+# Check for new reports and notify
+NOTIFY_CMD=$(python3 -c "import json; print(json.load(open('$STATE_FILE')).get('notify') or '')")
+if [ -n "$NOTIFY_CMD" ]; then
+  for REPORT in $(find "$SYNDICATE_DIR/reports" -name "*.md" -newer "$RUN_MARKER" 2>/dev/null); do
+    cat "$REPORT" | eval "$NOTIFY_CMD"
+    log "Notification sent for: $REPORT"
+  done
+fi
+rm -f "$RUN_MARKER"
+
 log "Cron run complete. Exit code: $EXIT_CODE"
 ```
 
@@ -347,6 +366,21 @@ You can always resume a venture interactively, even if cron is configured. The s
 - Each cron tick runs one generation. Multi-generation bursts require shorter intervals.
 - The cron runner uses sonnet by default. The runner may upgrade the task agent model based on meta-notes evidence, following the same model selection rules as interactive mode.
 - Cron output is less interactive. Check `cron.log` and metrics files for progress.
+
+## Notifications
+
+The syndicate can notify the user when it ships a round or dissolves. Configure the `notify` field in `state.json` with a shell command that accepts report text on stdin:
+
+```json
+"notify": "mail -s 'Syndicate Report' user@example.com"
+```
+
+Examples:
+- Email: `"notify": "mail -s 'Syndicate Report' user@example.com"`
+- Slack webhook: `"notify": "curl -s -X POST -H 'Content-type: application/json' -d @- https://hooks.slack.com/..."`
+- No notification: `"notify": null` (default)
+
+Reports are always written to `syndicate/reports/` regardless of notification config. Notifications are a convenience, not the canonical record.
 ```
 
 ---
@@ -368,7 +402,7 @@ After the Venture Mode section (line 82, `For discovery procedure and round tran
 
 Ventures can run autonomously across sessions. A cron job fires periodically, runs one generation (or discovery phase), and exits. The venture's own convergence logic decides when to stop.
 
-To enable: start the venture interactively (at least gen 1), set `cron_enabled: true` and `mode: "venture"` in `state.json`, and add a crontab entry pointing to `cron-runner.sh`. To pause, set `phase: "paused"` in `state.json` or set `cron_enabled: false`.
+To enable: complete the scope of work (generation 0) and run at least generation 1 interactively. Then set `cron_enabled: true` and `mode: "venture"` in `state.json`, and add a crontab entry pointing to `cron-runner.sh`. To pause, set `phase: "paused"` in `state.json` or set `cron_enabled: false`.
 
 For setup and operation details, read `references/cron.md`.
 ```
