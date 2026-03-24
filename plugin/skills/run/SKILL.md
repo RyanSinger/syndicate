@@ -43,13 +43,13 @@ The syndicate governs itself. No generation count from the user.
 
 ## The Coherence Firewall
 
-The coherence agent is the key insight from TurkoMatic (2011): self-organizing systems reliably derail without a structurally separate observer. It runs as a different model via `claude -p`. It never sees your code, skills, or prompts. Only fitness trajectories, complexity metrics, and commit messages. Its instructions (`agents/coherence.md`) are fixed and cannot be modified. This separation is the whole point.
+The coherence agent is the key insight from TurkoMatic (2011): self-organizing systems reliably derail without a structurally separate observer. It runs as a native subagent with zero tool access. It never sees your code, skills, or prompts. Only fitness trajectories, complexity metrics, and commit messages. Its instructions (`agents/coherence.md`) are fixed and cannot be modified. This separation is the whole point.
 
 ## Model Selection
 
-Token cost compounds. Every word in skills and prompts gets multiplied across every task agent call, every generation.
+A wasted generation costs more than a better model. Start strong, downgrade with evidence.
 
-Start the task agent on **haiku**. Upgrade to **sonnet** when you have evidence the model is the ceiling, not the approach. Use **opus** sparingly. Never change model and approach in the same generation. The coherence agent always runs on **haiku**.
+Start the task agent on **opus**. Downgrade to **sonnet** if evidence shows the task is simple enough (scores near max on first attempt, straightforward deliverable). Never change model and approach in the same generation. The coherence agent always runs on **sonnet**. Learned agents default to **sonnet**.
 
 ## What Evolves
 
