@@ -1,6 +1,6 @@
 ---
 name: syndicate
-description: "Spins up a self-governing outfit that iterates on its own work to deliver better results. Give it a goal (build an app, write a contract, design a system) and it stands up an organization that attempts the work, scores itself, evolves its approach, and ships when it's good enough. A structurally separate coherence agent prevents runaway complexity. Use this skill when the user wants something built or produced where iterative improvement would help, or when they mention 'syndicate', 'spin up', 'iterate on this', 'keep improving this', 'venture', 'keep going', or 'keep making it better'."
+description: Spins up a self-governing organization that iterates on a deliverable until it ships. Use when the user wants something built, written, or designed through iterative improvement.
 ---
 
 # Syndicate
