@@ -26,4 +26,4 @@ The firewall: the coherence agent's instructions are bundled with this skill and
 - **TurkoMatic** (2011) — Discovered derailment. Fixed it with structural separation.
 - **Darwin Gödel Machine** (2025) — Open-ended evolution of self-improving coding agents.
 - **HyperAgents** (2026) — Self-referential meta-agent. Meta-level improvements transfer across domains.
-- **Syndicate** — Adds the coherence layer. Criteria evolve through learning-by-doing. Claude Code as native substrate.
+- **Syndicate** — Adds the coherence layer. Criteria evolve through learning-by-doing. Claude Code as native substrate. Supports two lifecycle modes: **jobs** (converge and dissolve) and **ventures** (converge, ship, discover the next improvement, repeat). The three-tier governance is identical in both — venture mode only changes what happens at convergence.

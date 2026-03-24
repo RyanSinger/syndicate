@@ -93,6 +93,48 @@ git commit -m "gen-<N>: <one sentence>"
 
 Read `archive/branches.jsonl`. Highest-scoring non-pruned branch ~70% of the time. Random non-pruned branch ~30% for exploration.
 
+## Discovery Phase (Venture Mode)
+
+After shipping a round's best attempt, the meta-agent shifts from execution to discovery. This is not a subagent call — you do this yourself.
+
+1. Read the shipped deliverable in context of the project.
+2. Read `meta-notes.md` for accumulated learnings.
+3. Read `venture.jsonl` (if it exists) for what previous rounds focused on.
+4. Identify 3-5 candidate improvements, each as one sentence.
+5. Pick the highest-value one. Write a brief rationale.
+6. Rewrite `criteria.md` targeting that improvement (3-7 criteria, same as gen 1).
+7. Append to `meta-notes.md`: what was chosen, what was rejected, why. Use a `--- Round N ---` separator.
+8. Append to `venture.jsonl` (create it on the first round boundary).
+9. Resume the evolution loop. The next generation continues the global count.
+
+Discovery should be fast — one deliberate pause, not a sub-loop. If you can't find anything worth improving, the venture is done. Dissolve.
+
+## Round Transitions
+
+Generation numbering is **global**. If round 1 ends at gen-12, round 2 starts at gen-13.
+
+**What resets:** `criteria.md` (rewritten for the new focus).
+
+**What may be revised:** `skills/approach.md`, `prompts/task.md` — adjust if the new focus needs a different approach.
+
+**What persists:** `goal.md` (fixed forever), `meta-notes.md` (append-only), all `metrics/*`, `archive/branches.jsonl`, `venture.jsonl`.
+
+### venture.jsonl
+
+Created at the first round boundary. One line per completed round.
+
+```jsonl
+{"round": 1, "goal_focus": "initial implementation", "generations": 12, "best_score": 4.2, "shipped_at": "gen-12", "timestamp": "2026-03-24T10:00:00Z"}
+```
+
+### Coherence Agent at Round Boundaries
+
+The coherence agent's fixed prompt does not change. But criteria changes at a round boundary are larger than mid-round tweaks — scores will drop because the scoring dimensions changed. When invoking the coherence agent for the first generation of a new round, add this to the context:
+
+```
+Note: Criteria changed at generation <N> (new venture round). Score drops from criteria changes are expected.
+```
+
 ## Project Structure
 
 After bootstrap, `syndicate/` in the project root contains:
@@ -102,6 +144,7 @@ syndicate/
 ├── goal.md              # User's goal (written gen 1, fixed)
 ├── criteria.md          # Acceptance criteria (evolves)
 ├── meta-notes.md        # Persistent memory (append-only)
+├── venture.jsonl         # Round history (venture mode only, append-only)
 ├── skills/
 │   ├── approach.md
 │   └── domain/

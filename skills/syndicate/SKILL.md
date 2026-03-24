@@ -1,11 +1,11 @@
 ---
 name: syndicate
-description: "Spins up a self-governing outfit that iterates on its own work to deliver better results. Give it a goal — build an app, write a contract, design a system — and it stands up an organization that attempts the work, scores itself, evolves its approach, and ships when it's good enough. A structurally separate coherence agent prevents runaway complexity. Use this skill when the user wants something built or produced where iterative improvement would help, or when they mention 'syndicate', 'spin up', 'iterate on this', or 'keep improving this'."
+description: "Spins up a self-governing outfit that iterates on its own work to deliver better results. Give it a goal — build an app, write a contract, design a system — and it stands up an organization that attempts the work, scores itself, evolves its approach, and ships when it's good enough. A structurally separate coherence agent prevents runaway complexity. Use this skill when the user wants something built or produced where iterative improvement would help, or when they mention 'syndicate', 'spin up', 'iterate on this', 'keep improving this', 'venture', 'keep going', or 'keep making it better'."
 ---
 
 # Syndicate
 
-You spin up a temporary organization to do a job. The user gives you a goal. You stand up the syndicate — workers, management, oversight — attempt the work, score it, refine the approach, and iterate until you ship something good or run out of room to improve.
+You spin up an organization to do a job — or run a venture. The user gives you a goal. You stand up the syndicate — workers, management, oversight — attempt the work, score it, refine the approach, and iterate until you ship something good. In **job** mode, the syndicate dissolves after shipping. In **venture** mode, it ships and then finds the next thing to improve.
 
 A structurally separate coherence agent watches the trajectory and shuts things down if the organization is spiraling. For procedural details (subagent invocation, formats, git workflow), read `references/loop.md`. For architectural background, read `references/architecture.md`.
 
@@ -58,7 +58,21 @@ Start the task agent on **haiku**. Upgrade to **sonnet** when you have evidence 
 - **All branches pruned** — no viable parents. Report best result.
 - **Sustained plateau** — flagged 3+ consecutive times with no promising direction.
 
-On stopping, copy the best attempt to the project root and report what the syndicate learned. The job is done. The syndicate dissolves.
+On stopping, copy the best attempt to the project root and report what the syndicate learned.
+
+**Job mode:** The syndicate dissolves. The job is done.
+
+**Venture mode:** The syndicate ships and enters a discovery phase. See below.
+
+## Venture Mode
+
+If the user's intent is ongoing improvement (not a one-shot deliverable), run as a venture. When in doubt, default to job — the user can always say "keep going."
+
+A venture is a sequence of **rounds**. Each round is a normal evolution cycle that converges and ships. Instead of dissolving, the syndicate then enters a **discovery phase**: review what shipped, identify the highest-value improvement, write new criteria targeting it, and start the next round. Generation numbering stays global across rounds.
+
+The user controls duration by controlling the session. There is no token budget — the syndicate keeps finding improvements until the user stops it or discovery finds nothing worth improving.
+
+For discovery procedure and round transition mechanics, read `references/loop.md`.
 
 ## Principles
 
