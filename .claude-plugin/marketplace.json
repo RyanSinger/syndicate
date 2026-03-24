@@ -7,7 +7,8 @@
     {
       "name": "syndicate",
       "source": "./",
-      "description": "Spins up a self-governing outfit that iterates on its own work. Supports job mode and venture mode with a coherence agent preventing runaway complexity."
+      "description": "Spins up a self-governing outfit that iterates on its own work. Supports job mode and venture mode with a coherence agent preventing runaway complexity.",
+      "skills": "./skills"
     }
   ]
 }
