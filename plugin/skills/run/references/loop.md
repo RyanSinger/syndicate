@@ -4,23 +4,26 @@ Procedural details for running governed evolution. Read this when you need speci
 
 ## Subagent Invocation
 
-Strip the `CLAUDECODE` env var to allow nesting. Read agent prompts fresh from the skill path each time.
+Invoke subagents using the Agent tool. The plugin ships two agents (`syndicate:task` and `syndicate:coherence`) with static system prompts in `agents/`. Dynamic context goes in the Agent tool's `prompt` parameter.
 
 ### Task Agent
 
-```bash
-CLAUDECODE= claude -p "<contents of agents/task.md>
+`syndicate:task` is invoked via the Agent tool. The model defaults to opus (from the agent frontmatter); pass `model: sonnet` to downgrade if evidence supports it.
 
-<contents of prompts/task.md>
+```
+Agent tool:
+  description: "Gen <N>: produce deliverable"
+  subagent_type: "syndicate:task"
+  prompt: |
+    <contents of prompts/task.md>
 
-Skills:
-<concatenated contents of all files in skills/*.md and skills/domain/*.md>
+    Skills:
+    <concatenated contents of all files in skills/*.md and skills/domain/*.md>
 
-Goal:
-<contents of goal.md>
+    Goal:
+    <contents of goal.md>
 
-Produce the deliverable. Put all output files in the current directory." \
-  --model <chosen model>
+    Produce the deliverable. Put all output files in the current directory.
 ```
 
 Copy output into `attempts/gen-<N>/`.
@@ -31,17 +34,20 @@ Learned agents are specialized subagents the meta-agent creates from recurring p
 
 Before invoking, read the registry (`learned-agents/registry.jsonl`) and each candidate agent's "When to Invoke" field. Only invoke agents whose trigger conditions match the current situation. Most generations invoke zero learned agents.
 
-```bash
-CLAUDECODE= claude -p "<contents of learned-agents/<name>.md>
+```
+Agent tool:
+  description: "Gen <N>: <agent name>"
+  model: sonnet
+  prompt: |
+    <contents of learned-agents/<name>.md>
 
-Context:
-<context as specified by the agent's 'Context Required' section>
+    Context:
+    <context as specified by the agent's 'Context Required' section>
 
-Provide your output as specified in your instructions." \
-  --model <chosen model>
+    Provide your output as specified in your instructions.
 ```
 
-Default to haiku. Upgrade when evidence shows the model is the ceiling. Same principle as the task agent.
+Default to sonnet. Upgrade to opus or downgrade to haiku based on evidence.
 
 Learned agents can run at two points in the loop:
 - **Pre-generation** (after Diagnose, before Attempt): output feeds into the task agent's context
@@ -51,27 +57,29 @@ Update the registry after each invocation: increment `invocations`, set `last_in
 
 ### Coherence Agent
 
-Build a limited view first: scores, complexity, git log, diff stats. Never include code or file contents.
+Build a limited view first: scores, complexity, git log, diff stats. Never include code or file contents. The coherence agent has zero tool access (`tools: []` in its definition), so it can only reason about what you pass in the prompt.
 
-```bash
-CLAUDECODE= claude -p "<contents of agents/coherence.md>
+```
+Agent tool:
+  description: "Gen <N>: coherence check"
+  subagent_type: "syndicate:coherence"
+  prompt: |
+    Generation: <N>
+    Branch: <current branch>
 
-Generation: <N>
-Branch: <current branch>
+    Recent scores:
+    <last 10 lines of metrics/scores.jsonl>
 
-Recent scores:
-<last 10 lines of metrics/scores.jsonl>
+    Complexity trend:
+    <last 10 lines of metrics/complexity.jsonl>
 
-Complexity trend:
-<last 10 lines of metrics/complexity.jsonl>
+    Git log (last 10):
+    <git log --oneline -10>
 
-Git log (last 10):
-<git log --oneline -10>
+    Last change (file stats only):
+    <git diff HEAD~1 --stat>
 
-Last change (file stats only):
-<git diff HEAD~1 --stat>
-
-Respond as JSON only." --model haiku
+    Respond as JSON only.
 ```
 
 The coherence agent's response omits `generation`. Add the current generation number before appending to `coherence-log.jsonl`.
