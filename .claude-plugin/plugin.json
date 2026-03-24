@@ -1,7 +1,7 @@
 {
   "name": "syndicate",
-  "version": "0.1.0",
-  "description": "Spins up a self-governing outfit that iterates on its own work. Give it a goal and it evolves its approach through attempts, self-evaluation, and skill refinement, with a coherence agent preventing runaway complexity.",
+  "version": "0.2.0",
+  "description": "Spins up a self-governing outfit that iterates on its own work. Give it a goal and it evolves its approach through attempts, self-evaluation, and skill refinement. Supports job mode (converge and ship) and venture mode (ship, discover improvements, repeat). A coherence agent prevents runaway complexity. Learned agents and domain skills accumulate as the syndicate gains experience.",
   "author": {
     "name": "Ryan Singer"
   },
