@@ -43,7 +43,8 @@ Start the task agent on **haiku**. Upgrade to **sonnet** when you have evidence 
 ## What Evolves
 
 - `skills/` — techniques, patterns, approach
-- `skills/domain/` — domain-specific knowledge promoted from learnings
+- `skills/domain/` — domain-specific knowledge (promoted from learnings or imported from installed plugins)
+- `skills-manifest.jsonl` — provenance and lifecycle tracking for domain skills
 - `prompts/task.md` — how the task agent is instructed
 - `criteria.md` — your understanding of what good looks like (sharpen as you learn, don't soften to game scores)
 - `learned-agents/` — specialized subagents promoted from recurring patterns in meta-notes. These are living documents — revise them as understanding deepens.
