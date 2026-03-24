@@ -1,0 +1,10 @@
+{
+  "name": "syndicate",
+  "version": "0.1.0",
+  "description": "Spins up a self-governing outfit that iterates on its own work. Give it a goal and it evolves its approach through attempts, self-evaluation, and skill refinement, with a coherence agent preventing runaway complexity.",
+  "author": {
+    "name": "Ryan Singer"
+  },
+  "license": "MIT",
+  "keywords": ["self-improving", "evolution", "governance", "iterative", "agents"]
+}
