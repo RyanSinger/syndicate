@@ -70,7 +70,7 @@ The coherence agent can return `flag` but no instruction tells the meta-agent wh
 
 A long-running venture (e.g., operating a SaaS over months) could accumulate hundreds or thousands of rounds. `venture.jsonl` is read during discovery to review past round focus, and dumping the full file into context at scale wastes tokens and risks hitting context limits.
 
-**Fix:** Add a distillation procedure for `venture.jsonl` in `loop.md`, modeled on the existing `meta-notes.md` distillation. Keep the last ~10 rounds intact. Compress older rounds into a summary paragraph at the top of the file. Git preserves the full history for research. Trigger distillation at the same points as meta-notes: when the file is consuming too many tokens relative to its value.
+**Fix:** Add a distillation procedure for `venture.jsonl` in `loop.md`, modeled on the existing `meta-notes.md` distillation. When the file is consuming too many tokens relative to its value, compress older rounds into a summary paragraph at the top and keep recent rounds intact. Git preserves the full history for research.
 
 Also update `SKILL.md`'s "What's Fixed" description to note that `venture.jsonl` is distilled periodically (not strictly append-only). This changes the fix from Issue 11: instead of calling it "append-only," describe it as "distilled periodically, like meta-notes. Git preserves full history."
 
