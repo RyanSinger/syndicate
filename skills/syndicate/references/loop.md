@@ -254,9 +254,10 @@ After shipping a round's best attempt, the meta-agent shifts from execution to d
 6. Rewrite `criteria.md` targeting that improvement (3-7 criteria, same as gen 1).
 7. Append to `meta-notes.md`: what was chosen, what was rejected, why. Use a `--- Round N ---` separator.
 8. Append to `venture.jsonl` (create it on the first round boundary).
-9. Resume the evolution loop. The next generation continues the global count.
+9. Write a round report to `reports/round-N.md` following the Round Report Format above. In interactive sessions, also present it to the user.
+10. Resume the evolution loop. The next generation continues the global count.
 
-Discovery should be fast: one deliberate pause, not a sub-loop. If you can't find anything worth improving, the venture is done. Dissolve.
+Discovery should be fast: one deliberate pause, not a sub-loop. If you can't find anything worth improving, write a dissolution report to `reports/final.md` and dissolve.
 
 ## Round Transitions
 
@@ -288,6 +289,63 @@ The coherence agent's fixed prompt does not change. But criteria changes at a ro
 Note: Criteria changed at generation <N> (new venture round). Score drops from criteria changes are expected.
 ```
 
+## Reports
+
+The syndicate writes reports at round boundaries and on dissolution. All reports go in `reports/`.
+
+### Round Report Format
+
+Written after the discovery phase completes (step 9), before resuming the evolution loop. File: `reports/round-N.md`.
+
+```
+# Round N Report
+
+## What Shipped
+<One sentence describing the deliverable. Path to best attempt.>
+
+## Score Trajectory
+<Starting and ending average scores for the round. Number of generations. Notable events: model upgrades, criteria revisions, coherence flags.>
+
+## What Was Learned
+<Two to three sentences distilled from meta-notes. What worked, what didn't.>
+
+## Next Round Focus
+<What the discovery phase identified as the highest-value improvement, and why. What was considered and rejected.>
+```
+
+In interactive sessions, also present the report directly to the user.
+
+### Dissolution Report Format
+
+Written whenever the syndicate dissolves, regardless of mode or stopping condition. File: `reports/final.md`.
+
+```
+# Dissolution Report
+
+## Outcome
+<One sentence: what was accomplished.>
+
+## Stopping Reason
+<Why the syndicate stopped: convergence (job), nothing worth improving (venture), sustained plateau, or all branches pruned.>
+
+## Rounds Summary
+<For ventures: one line per round from venture.jsonl. For jobs: single round summary.>
+
+## What Was Learned
+<Key learnings distilled from meta-notes. What approaches worked, what failed, what surprised.>
+
+## Deliverable
+<Path to the best attempt in the project root.>
+```
+
+### Dissolution Trigger Points
+
+Write the dissolution report wherever `phase` is set to `"dissolved"`:
+- Job mode convergence (round converged, no discovery phase)
+- Venture mode exhaustion (discovery found nothing worth improving)
+- Sustained plateau (flagged 3+ consecutive times, any mode)
+- All branches pruned (no viable parents, any mode)
+
 ## Project Structure
 
 After bootstrap, `syndicate/` in the project root contains:
@@ -312,6 +370,9 @@ syndicate/
 │   ├── scores.jsonl
 │   ├── complexity.jsonl
 │   └── coherence-log.jsonl
-└── archive/
-    └── branches.jsonl
+├── archive/
+│   └── branches.jsonl
+└── reports/
+    ├── round-N.md          # Round boundary reports
+    └── final.md            # Dissolution report
 ```
