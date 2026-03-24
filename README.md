@@ -43,7 +43,7 @@ The system governs itself. It decides when to upgrade models, when to revise its
 
 ## Background
 
-Combines Meta's HyperAgents (2026) with failure-mode research from TurkoMatic (Kulkarni et al., 2011). See `skills/syndicate/references/architecture.md`.
+Combines Meta's HyperAgents (2026) with failure-mode research from TurkoMatic (Kulkarni et al., 2011). See `plugin/skills/run/references/architecture.md`.
 
 ## License
 

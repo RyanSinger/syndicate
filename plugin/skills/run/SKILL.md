@@ -1,5 +1,5 @@
 ---
-name: syndicate
+name: run
 description: Spins up a self-governing organization that iterates on a deliverable until it ships. Use when the user wants something built, written, or designed through iterative improvement.
 ---
 

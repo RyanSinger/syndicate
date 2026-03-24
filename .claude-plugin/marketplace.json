@@ -6,9 +6,8 @@
   "plugins": [
     {
       "name": "syndicate",
-      "source": "./",
-      "description": "Spins up a self-governing outfit that iterates on its own work. Supports job mode and venture mode with a coherence agent preventing runaway complexity.",
-      "skills": "./skills"
+      "source": "./plugin",
+      "description": "Spins up a self-governing organization that iterates on a deliverable until it ships. Supports job mode and venture mode."
     }
   ]
 }

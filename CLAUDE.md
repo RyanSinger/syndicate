@@ -20,13 +20,16 @@ The syndicate communicates with the user at defined moments: scope of work befor
 
 The coherence firewall is the key architectural invariant. Without it, the system reliably derails into complexity spirals.
 
-## Plugin Structure
+## Repository Structure
 
-- `skills/syndicate/SKILL.md`: Main skill entry point (the syndicate loop definition)
-- `skills/syndicate/agents/`: Fixed subagent prompts (task.md, coherence.md). These ship with the plugin and do not evolve
-- `skills/syndicate/references/`: architecture.md (design rationale), loop.md (procedural details for subagent invocation, metrics formats, git workflow, discovery phase)
-- `skills/syndicate/templates/`: Bootstrapped into `syndicate/` in the user's project root when a syndicate starts. Contains initial skills, prompts, meta-notes, and empty directories for attempts/metrics/archive
-- `.claude-plugin/plugin.json`: Plugin manifest
+- `.claude-plugin/marketplace.json`: Marketplace catalog (points to `plugin/` for the plugin source)
+- `plugin/`: The installable plugin (only this directory gets cached by Claude Code)
+  - `plugin/.claude-plugin/plugin.json`: Plugin manifest
+  - `plugin/skills/run/SKILL.md`: Main skill entry point (the syndicate loop definition)
+  - `plugin/skills/run/agents/`: Fixed subagent prompts (task.md, coherence.md). These ship with the plugin and do not evolve
+  - `plugin/skills/run/references/`: architecture.md (design rationale), loop.md (procedural details for subagent invocation, metrics formats, git workflow, discovery phase)
+  - `plugin/skills/run/templates/`: Bootstrapped into `syndicate/` in the user's project root when a syndicate starts
+- `docs/`: Design specs and implementation plans (not part of the plugin)
 
 ## Key Conventions
 
@@ -42,4 +45,4 @@ The coherence firewall is the key architectural invariant. Without it, the syste
 
 Evolves: `syndicate/skills/`, `syndicate/prompts/task.md`, `syndicate/criteria.md`, `syndicate/learned-agents/`, `syndicate/meta-notes.md`
 
-Fixed: `syndicate/goal.md` (set once), `skills/syndicate/agents/` (bundled with plugin), `syndicate/metrics/` (append-only), `syndicate/reports/` (written at round boundaries and dissolution)
+Fixed: `syndicate/goal.md` (set once), `plugin/skills/run/agents/` (bundled with plugin), `syndicate/metrics/` (append-only), `syndicate/reports/` (written at round boundaries and dissolution)
