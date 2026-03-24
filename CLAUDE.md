@@ -16,6 +16,8 @@ The core design borrows structural separation from TurkoMatic (2011) to prevent 
 - **Task agent** (subagent via `claude -p`): produces the deliverable each generation. Starts on haiku, upgrades only with evidence
 - **Coherence agent** (subagent via `claude -p`, always haiku): watches fitness trajectories and complexity metrics only. Never sees code, prompts, or skills. Its prompt (`agents/coherence.md`) is fixed and must not be modified
 
+The syndicate communicates with the user at defined moments: scope of work before gen 1, round boundary reports after each discovery phase, and a dissolution report on stopping. Mid-round, it runs autonomously.
+
 The coherence firewall is the key architectural invariant. Without it, the system reliably derails into complexity spirals.
 
 ## Plugin Structure
@@ -40,4 +42,4 @@ The coherence firewall is the key architectural invariant. Without it, the syste
 
 Evolves: `syndicate/skills/`, `syndicate/prompts/task.md`, `syndicate/criteria.md`, `syndicate/learned-agents/`, `syndicate/meta-notes.md`
 
-Fixed: `syndicate/goal.md` (set once), `skills/syndicate/agents/` (bundled with plugin), `syndicate/metrics/` (append-only)
+Fixed: `syndicate/goal.md` (set once), `skills/syndicate/agents/` (bundled with plugin), `syndicate/metrics/` (append-only), `syndicate/reports/` (written at round boundaries and dissolution)
