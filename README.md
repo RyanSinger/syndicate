@@ -5,8 +5,7 @@ A Claude Code plugin that spins up a self-governing outfit to do a job. Give it 
 ## Install
 
 ```
-/plugin marketplace add <your-username>/syndicate
-/plugin install syndicate@syndicate
+/install-github-plugin RyanSinger/syndicate
 ```
 
 ## Use
