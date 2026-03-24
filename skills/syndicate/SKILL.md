@@ -1,38 +1,40 @@
 ---
 name: syndicate
-description: "Spins up a self-governing outfit that iterates on its own work to deliver better results. Give it a goal — build an app, write a contract, design a system — and it stands up an organization that attempts the work, scores itself, evolves its approach, and ships when it's good enough. A structurally separate coherence agent prevents runaway complexity. Use this skill when the user wants something built or produced where iterative improvement would help, or when they mention 'syndicate', 'spin up', 'iterate on this', 'keep improving this', 'venture', 'keep going', or 'keep making it better'."
+description: "Spins up a self-governing outfit that iterates on its own work to deliver better results. Give it a goal (build an app, write a contract, design a system) and it stands up an organization that attempts the work, scores itself, evolves its approach, and ships when it's good enough. A structurally separate coherence agent prevents runaway complexity. Use this skill when the user wants something built or produced where iterative improvement would help, or when they mention 'syndicate', 'spin up', 'iterate on this', 'keep improving this', 'venture', 'keep going', or 'keep making it better'."
 ---
 
 # Syndicate
 
-You spin up an organization to do a job — or run a venture. The user gives you a goal. You stand up the syndicate — workers, management, oversight — attempt the work, score it, refine the approach, and iterate until you ship something good. In **job** mode, the syndicate dissolves after shipping. In **venture** mode, it ships and then finds the next thing to improve.
+You spin up an organization to do a job or run a venture. The user gives you a goal. You stand up the syndicate (workers, management, oversight), attempt the work, score it, refine the approach, and iterate until you ship something good. In **job** mode, the syndicate dissolves after shipping. In **venture** mode, it ships and then finds the next thing to improve.
 
 A structurally separate coherence agent watches the trajectory and shuts things down if the organization is spiraling. For procedural details (subagent invocation, formats, git workflow), read `references/loop.md`. For architectural background, read `references/architecture.md`.
 
 ## Setup
 
-If `syndicate/` doesn't exist in the project root, bootstrap it by copying this skill's `templates/` directory there and initializing a git repo. If it exists, cd into it and pick up where you left off.
+If `syndicate/` doesn't exist in the project root, bootstrap it by copying this skill's `templates/` directory there, initializing a git repo, creating an initial commit, and tagging it `seed`. If it exists, cd into it and pick up where you left off.
 
-## Generation 1 — Start by Doing
+## Generation 1: Start by Doing
 
-Write down the goal (`goal.md`). Then take your best guess at what "good" looks like — 3 to 7 concrete criteria in `criteria.md`. These are hypotheses, not specs. You don't fully know what good looks like until you've tried building it.
+Write down the goal (`goal.md`). Then take your best guess at what "good" looks like: 3 to 7 concrete criteria in `criteria.md`. Score each criterion on a 1 to 5 scale (1 = not met, 5 = fully met). These are hypotheses, not specs. You don't fully know what good looks like until you've tried building it.
 
-Make your first attempt. Produce the real deliverable. Then score yourself honestly — and ask whether building this revealed that the criteria themselves are wrong. Revise them if so. This isn't failure, it's learning.
+Make your first attempt. Produce the real deliverable. Then score yourself honestly, and ask whether building this revealed that the criteria themselves are wrong. Revise them if so. This isn't failure, it's learning.
+
+Skip the coherence check for generation 1. There is no trajectory to evaluate yet.
 
 ## Every Generation After That
 
-1. **Diagnose** — What's weakest in the last attempt? Are the criteria still measuring the right things?
-2. **Propose one small change** — to skills, task prompt, or criteria. State what you expect it to improve and why. Smaller changes give clearer signal.
-3. **Attempt** — Produce a new version of the deliverable using a task agent subagent.
-4. **Score** — Evaluate honestly against current criteria.
-5. **Coherence check** — A separate agent reviews your trajectory (scores and complexity only, never your code) and decides: continue, flag, or prune.
-6. **Record what you learned** — Write observations in `meta-notes.md`. If a pattern has recurred enough to be reusable, promote it to a learned agent or domain skill. Distill meta-notes when they get too long.
+1. **Diagnose.** What's weakest in the last attempt? Are the criteria still measuring the right things?
+2. **Propose one small change.** To skills, task prompt, or criteria. State what you expect it to improve and why. Smaller changes give clearer signal.
+3. **Attempt.** Produce a new version of the deliverable using a task agent subagent.
+4. **Score.** Evaluate honestly against current criteria.
+5. **Coherence check.** A separate agent reviews your trajectory (scores and complexity only, never your code) and decides: continue, flag, or prune. On `flag`, you must change your approach for the next generation: different parent, revised skill, or model change. Each `flag` increments the plateau counter; `continue` or `prune` resets it.
+6. **Record what you learned.** Write observations in `meta-notes.md`. If a pattern has recurred enough to be reusable, promote it to a learned agent or domain skill. Distill meta-notes when they get too long.
 
 The syndicate governs itself. No generation count from the user.
 
 ## The Coherence Firewall
 
-The coherence agent is the key insight from TurkoMatic (2011): self-organizing systems reliably derail without a structurally separate observer. It runs as a different model via `claude -p`. It never sees your code, skills, or prompts — only fitness trajectories, complexity metrics, and commit messages. Its instructions (`agents/coherence.md`) are fixed and cannot be modified. This separation is the whole point.
+The coherence agent is the key insight from TurkoMatic (2011): self-organizing systems reliably derail without a structurally separate observer. It runs as a different model via `claude -p`. It never sees your code, skills, or prompts. Only fitness trajectories, complexity metrics, and commit messages. Its instructions (`agents/coherence.md`) are fixed and cannot be modified. This separation is the whole point.
 
 ## Model Selection
 
@@ -42,25 +44,26 @@ Start the task agent on **haiku**. Upgrade to **sonnet** when you have evidence 
 
 ## What Evolves
 
-- `skills/` — techniques, patterns, approach
-- `skills/domain/` — domain-specific knowledge (promoted from learnings or imported from installed plugins)
-- `skills-manifest.jsonl` — provenance and lifecycle tracking for domain skills
-- `prompts/task.md` — how the task agent is instructed
-- `criteria.md` — your understanding of what good looks like (sharpen as you learn, don't soften to game scores)
-- `learned-agents/` — specialized subagents promoted from recurring patterns in meta-notes. These are living documents — revise them as understanding deepens.
-- `meta-notes.md` — observations and learnings, distilled periodically to stay manageable
+- `skills/`: techniques, patterns, approach
+- `skills/domain/`: domain-specific knowledge (promoted from learnings or imported from installed plugins)
+- `skills-manifest.jsonl`: provenance and lifecycle tracking for domain skills
+- `prompts/task.md`: how the task agent is instructed
+- `criteria.md`: your understanding of what good looks like (sharpen as you learn, don't soften to game scores)
+- `learned-agents/`: specialized subagents promoted from recurring patterns in meta-notes. These are living documents. Revise them as understanding deepens.
+- `meta-notes.md`: observations and learnings, distilled periodically to stay manageable
 
 ## What's Fixed
 
-- `goal.md` — the user's goal doesn't change
-- `agents/` — core subagent prompts (task, coherence) bundled with this skill
-- `metrics/` — append-only record
+- `goal.md`: the user's goal doesn't change
+- `agents/`: core subagent prompts (task, coherence) bundled with this skill
+- `metrics/`: append-only record
+- `venture.jsonl` (venture mode only, distilled periodically like meta-notes. Git preserves full history)
 
 ## Stopping Conditions
 
-- **Converged** — criteria near max scores for 2+ generations. Ship the best attempt.
-- **All branches pruned** — no viable parents. Report best result.
-- **Sustained plateau** — flagged 3+ consecutive times with no promising direction.
+- **Converged:** average score 4.5 or above for 2+ generations. Ship the best attempt.
+- **All branches pruned:** no viable parents. Report best result.
+- **Sustained plateau:** flagged 3+ consecutive times with no promising direction.
 
 On stopping, copy the best attempt to the project root and report what the syndicate learned.
 
@@ -70,11 +73,11 @@ On stopping, copy the best attempt to the project root and report what the syndi
 
 ## Venture Mode
 
-If the user's intent is ongoing improvement (not a one-shot deliverable), run as a venture. When in doubt, default to job — the user can always say "keep going."
+If the user's intent is ongoing improvement (not a one-shot deliverable), run as a venture. When in doubt, default to job. The user can always say "keep going."
 
 A venture is a sequence of **rounds**. Each round is a normal evolution cycle that converges and ships. Instead of dissolving, the syndicate then enters a **discovery phase**: review what shipped, identify the highest-value improvement, write new criteria targeting it, and start the next round. Generation numbering stays global across rounds.
 
-The user controls duration by controlling the session. There is no token budget — the syndicate keeps finding improvements until the user stops it or discovery finds nothing worth improving.
+The user controls duration by controlling the session. There is no token budget. The syndicate keeps finding improvements until the user stops it or discovery finds nothing worth improving.
 
 For discovery procedure and round transition mechanics, read `references/loop.md`.
 
@@ -82,7 +85,7 @@ For discovery procedure and round transition mechanics, read `references/loop.md
 
 - Ship a good deliverable. Don't run forever.
 - Small changes, clear signal. You get many generations.
-- Criteria are hypotheses. Revise honestly — but don't soften them to inflate scores.
+- Criteria are hypotheses. Revise honestly, but don't soften them to inflate scores.
 - Every word costs tokens. Tight skills compound savings.
 - Read `meta-notes.md` and check `learned-agents/` before every generation. Don't repeat failures. When stuck, dig into git history for distilled-away context.
 - The coherence agent is right until proven otherwise.
