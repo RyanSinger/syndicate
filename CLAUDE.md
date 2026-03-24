@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-Syndicate is a Claude Code plugin (installed via `/install-github-plugin RyanSinger/syndicate`). It spins up a self-governing organization of agents to iteratively produce a deliverable. The user provides a goal; the syndicate attempts, scores, evolves its approach, and ships.
+Syndicate is a Claude Code plugin (installed via `/plugin marketplace add RyanSinger/syndicate`). It spins up a self-governing organization of agents to iteratively produce a deliverable. The user provides a goal; the syndicate attempts, scores, evolves its approach, and ships.
 
 Two modes: **job** (converge and dissolve) and **venture** (converge, ship, discover next improvement, repeat).
 
