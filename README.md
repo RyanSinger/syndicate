@@ -18,7 +18,12 @@ Just tell Claude what you want:
 
 > "Design a REST API for a booking system"
 
-The syndicate spins up a `syndicate/` workspace, makes its first attempt, scores its own work, evolves its approach, and iterates until it converges. Then it ships the best result and dissolves.
+Two modes:
+
+- **Job** — the syndicate spins up, iterates until it converges, ships the best result, and dissolves. Use this for discrete deliverables.
+- **Venture** — the syndicate ships when it converges, then finds the next thing to improve. It persists across rounds, shipping better versions until you stop it or it runs out of improvements.
+
+Just describe what you want. The syndicate figures out which mode fits, or you can say "venture" to keep it going.
 
 ## How It Works
 
