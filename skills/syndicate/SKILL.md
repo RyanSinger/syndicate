@@ -26,7 +26,7 @@ Make your first attempt. Produce the real deliverable. Then score yourself hones
 3. **Attempt** — Produce a new version of the deliverable using a task agent subagent.
 4. **Score** — Evaluate honestly against current criteria.
 5. **Coherence check** — A separate agent reviews your trajectory (scores and complexity only, never your code) and decides: continue, flag, or prune.
-6. **Record what you learned** — Append to `meta-notes.md`. Future-you reads these.
+6. **Record what you learned** — Write observations in `meta-notes.md`. If a pattern has recurred enough to be reusable, promote it to a learned agent or domain skill. Distill meta-notes when they get too long.
 
 The syndicate governs itself. No generation count from the user.
 
@@ -43,13 +43,16 @@ Start the task agent on **haiku**. Upgrade to **sonnet** when you have evidence 
 ## What Evolves
 
 - `skills/` — techniques, patterns, approach
+- `skills/domain/` — domain-specific knowledge promoted from learnings
 - `prompts/task.md` — how the task agent is instructed
 - `criteria.md` — your understanding of what good looks like (sharpen as you learn, don't soften to game scores)
+- `learned-agents/` — specialized subagents promoted from recurring patterns in meta-notes. These are living documents — revise them as understanding deepens.
+- `meta-notes.md` — observations and learnings, distilled periodically to stay manageable
 
 ## What's Fixed
 
 - `goal.md` — the user's goal doesn't change
-- `agents/` — subagent prompts (bundled with this skill, read fresh each time)
+- `agents/` — core subagent prompts (task, coherence) bundled with this skill
 - `metrics/` — append-only record
 
 ## Stopping Conditions
@@ -80,5 +83,5 @@ For discovery procedure and round transition mechanics, read `references/loop.md
 - Small changes, clear signal. You get many generations.
 - Criteria are hypotheses. Revise honestly — but don't soften them to inflate scores.
 - Every word costs tokens. Tight skills compound savings.
-- Read `meta-notes.md` before every generation. Don't repeat failures.
+- Read `meta-notes.md` and check `learned-agents/` before every generation. Don't repeat failures. When stuck, dig into git history for distilled-away context.
 - The coherence agent is right until proven otherwise.

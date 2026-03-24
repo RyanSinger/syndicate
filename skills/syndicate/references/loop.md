@@ -25,6 +25,30 @@ Produce the deliverable. Put all output files in the current directory." \
 
 Copy output into `attempts/gen-<N>/`.
 
+### Learned Agents
+
+Learned agents are specialized subagents the meta-agent creates from recurring patterns in meta-notes. They live in `learned-agents/<name>.md` in the project's `syndicate/` directory (not the skill-bundled `agents/` directory, which is fixed).
+
+Before invoking, read the registry (`learned-agents/registry.jsonl`) and each candidate agent's "When to Invoke" field. Only invoke agents whose trigger conditions match the current situation. Most generations invoke zero learned agents.
+
+```bash
+CLAUDECODE= claude -p "<contents of learned-agents/<name>.md>
+
+Context:
+<context as specified by the agent's 'Context Required' section>
+
+Provide your output as specified in your instructions." \
+  --model <chosen model>
+```
+
+Default to haiku. Upgrade when evidence shows the model is the ceiling — same principle as the task agent.
+
+Learned agents can run at two points in the loop:
+- **Pre-generation** (after Diagnose, before Attempt) — output feeds into the task agent's context
+- **Post-generation** (after Attempt, before Score) — output informs scoring
+
+Update the registry after each invocation: increment `invocations`, set `last_invoked`.
+
 ### Coherence Agent
 
 Build a limited view first — scores, complexity, git log, diff stats. Never include code or file contents.
@@ -63,7 +87,7 @@ All metrics files are append-only JSONL in `metrics/`.
 ### complexity.jsonl
 
 ```jsonl
-{"generation": 1, "skill_tokens": 45, "prompt_tokens": 12, "file_count": 3}
+{"generation": 1, "skill_tokens": 45, "prompt_tokens": 12, "file_count": 3, "learned_agent_count": 0, "learned_agent_invocations": 0}
 ```
 
 ### coherence-log.jsonl
@@ -93,6 +117,72 @@ git commit -m "gen-<N>: <one sentence>"
 
 Read `archive/branches.jsonl`. Highest-scoring non-pruned branch ~70% of the time. Random non-pruned branch ~30% for exploration.
 
+## Promoting Learnings
+
+After recording observations in meta-notes, evaluate whether any pattern is ready for promotion. Promote when:
+- **Recurrence** — the same pattern has come up 3+ times
+- **Actionability** — it's reusable, not just an observation
+
+The meta-agent decides the form:
+- **Procedure** (takes input, produces output, works independently) → create a **learned agent** in `learned-agents/<name>.md`
+- **Knowledge** (techniques, patterns, domain facts that inform work) → create or update a **domain skill** in `skills/domain/<name>.md`
+
+### Creating a Learned Agent
+
+Write the agent definition to `learned-agents/<name>.md`:
+
+```markdown
+# <Agent Name>
+
+Promoted at generation <N>. Last revised generation <M>.
+
+## Role
+<One sentence: what this agent does>
+
+## When to Invoke
+<One sentence: the condition under which to call this agent>
+
+## Instructions
+<The actual agent prompt — concise, 10-30 lines. Token efficiency still matters.>
+
+## Context Required
+<What this agent needs to see as input>
+```
+
+Append to `learned-agents/registry.jsonl`:
+
+```jsonl
+{"name": "<name>", "promoted_at": <gen>, "last_revised": <gen>, "invocations": 0, "last_invoked": null, "retired": false}
+```
+
+Note the promotion in meta-notes: `Promoted to agent: <name> (reason: <one sentence>)`.
+
+### Evolving Learned Agents and Skills
+
+Learned agents and domain skills are living documents. Revise them as understanding deepens — a learned agent promoted at gen-5 may be substantially different by gen-20. Update `last_revised` in the registry when revising an agent.
+
+### Retiring Learned Agents
+
+Retire learned agents that are no longer pulling their weight. Set `retired: true` in the registry. No fixed rules — the coherence agent monitors complexity growth and will flag if proliferation outpaces improvement.
+
+## Meta-Notes Distillation
+
+meta-notes.md is not strictly append-only. Distill it when:
+- **Round boundary** (venture mode) — natural pause point for cleanup
+- **Too long** — the file is consuming too many tokens relative to its value
+
+Distillation procedure:
+1. Entries whose learnings have been promoted to agents/skills → replace with a one-line reference: `→ See learned-agents/<name>.md` or `→ See skills/domain/<name>.md`
+2. Stale observations (tried something, didn't work, already captured in approach) → compress into a summary paragraph
+3. Recent entries (last ~5 generations) → keep intact
+4. Add a `--- Distilled through gen-N ---` marker separating compressed history from live notes
+
+Git preserves the full history. The working file stays short and relevant.
+
+### Researching History
+
+When diagnosing stubborn problems, dig into git history — not just the current meta-notes. Earlier entries that were distilled away may contain relevant context. Use `git log` and `git show` to recover earlier meta-notes or attempt details when current notes don't explain a recurring failure.
+
 ## Discovery Phase (Venture Mode)
 
 After shipping a round's best attempt, the meta-agent shifts from execution to discovery. This is not a subagent call — you do this yourself.
@@ -117,7 +207,7 @@ Generation numbering is **global**. If round 1 ends at gen-12, round 2 starts at
 
 **What may be revised:** `skills/approach.md`, `prompts/task.md` — adjust if the new focus needs a different approach.
 
-**What persists:** `goal.md` (fixed forever), `meta-notes.md` (append-only), all `metrics/*`, `archive/branches.jsonl`, `venture.jsonl`.
+**What persists:** `goal.md` (fixed forever), `meta-notes.md` (distilled at round boundaries), `learned-agents/` (evolving), all `metrics/*`, `archive/branches.jsonl`, `venture.jsonl`.
 
 ### venture.jsonl
 
@@ -143,13 +233,15 @@ After bootstrap, `syndicate/` in the project root contains:
 syndicate/
 ├── goal.md              # User's goal (written gen 1, fixed)
 ├── criteria.md          # Acceptance criteria (evolves)
-├── meta-notes.md        # Persistent memory (append-only)
+├── meta-notes.md        # Persistent memory (distilled periodically)
 ├── venture.jsonl         # Round history (venture mode only, append-only)
 ├── skills/
 │   ├── approach.md
-│   └── domain/
+│   └── domain/          # Domain-specific skills (evolves, promotion target)
 ├── prompts/
 │   └── task.md
+├── learned-agents/      # Specialized agents promoted from learnings (evolves)
+│   └── registry.jsonl
 ├── attempts/
 │   └── gen-N/
 ├── metrics/
