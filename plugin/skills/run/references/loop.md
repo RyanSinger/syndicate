@@ -23,10 +23,8 @@ Agent tool:
     Goal:
     <contents of goal.md>
 
-    Produce the deliverable. Put all output files in the current directory.
-```
-
-Copy output into `attempts/gen-<N>/`.
+    Output directory: syndicate/attempts/gen-<N>/
+    Put all output files in the output directory above. Create it if needed.
 
 ### Learned Agents
 
