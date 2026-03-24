@@ -172,7 +172,7 @@ Run the discovery phase following the procedure in loop.md:
 
 - Execute exactly ONE step (one generation or one discovery phase), then exit.
 - Follow all procedures in SKILL.md and loop.md: model selection, coherence firewall, parent selection, token efficiency.
-- The coherence agent always runs on haiku. Start the task agent on haiku unless prior meta-notes show evidence the model is the ceiling.
+- The coherence agent always runs on sonnet. Start the task agent on opus. Downgrade to sonnet if prior meta-notes show evidence the task is simple enough.
 - Never modify `agents/coherence.md` or `agents/task.md` (these are fixed, bundled with the skill).
 - If any subagent invocation fails, log the error in meta-notes, set the generation as a failed attempt with score 0, and proceed with coherence check.
 - Write round reports to `syndicate/reports/round-N.md` and dissolution reports to `syndicate/reports/final.md` as specified in the loop reference.
