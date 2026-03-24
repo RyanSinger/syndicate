@@ -16,8 +16,8 @@
 | | Corporate | Syndicate |
 |---|---|---|
 | Board | Evaluates trajectory, doesn't manage | Coherence agent: sees only metrics, prunes bad branches |
-| Management | Designs strategy, modifies operations | Meta-agent: modifies skills, prompts, criteria |
-| Operations | Executes tasks | Task agent: produces deliverables |
+| Management | Designs strategy, modifies operations | Meta-agent: modifies skills, prompts, criteria; promotes learnings to agents/skills |
+| Operations | Executes tasks | Task agent: produces deliverables. Learned agents: specialized work promoted from experience |
 
 The firewall: the coherence agent's instructions are bundled with this skill and never modified. It runs as a separate invocation with a different model. It sees trajectories, not implementations.
 
