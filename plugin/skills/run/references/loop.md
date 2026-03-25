@@ -8,12 +8,14 @@ Invoke subagents using the Agent tool. The plugin ships two agents (`syndicate:t
 
 ### Task Agent
 
-`syndicate:task` is invoked via the Agent tool. The model defaults to opus (from the agent frontmatter); pass `model: sonnet` to downgrade if evidence supports it.
+`syndicate:task` is invoked via the Agent tool with parallel dispatch. Each proposed variant gets its own task agent running in an isolated worktree simultaneously. The model defaults to opus (from the agent frontmatter); pass `model: sonnet` to downgrade if evidence supports it.
 
 ```
 Agent tool:
-  description: "Gen <N>: produce deliverable"
+  description: "Gen <N> variant <V>: produce deliverable"
   subagent_type: "syndicate:task"
+  isolation: "worktree"
+  run_in_background: true
   prompt: |
     <contents of prompts/task.md>
 
@@ -23,8 +25,11 @@ Agent tool:
     Goal:
     <contents of goal.md>
 
-    Output directory: syndicate/attempts/gen-<N>/
+    Output directory: syndicate/attempts/gen-<N>-<V>/
     Put all output files in the output directory above. Create it if needed.
+```
+
+Dispatch all variants simultaneously. After all complete, check out each variant's branch to read its output for scoring.
 
 ### Learned Agents
 
@@ -55,17 +60,21 @@ Update the registry after each invocation: increment `invocations`, set `last_in
 
 ### Coherence Agent
 
-Build a limited view first: scores, complexity, git log, diff stats. Never include code or file contents. The coherence agent has zero tool access (`tools: []` in its definition), so it can only reason about what you pass in the prompt.
+Build a limited view first: scores, complexity, git log, diff stats. Never include code or file contents. The coherence agent has zero tool access (`tools: []` in its definition), so it can only reason about what you pass in the prompt. One coherence call per generation step evaluates the full batch of variants together.
 
 ```
 Agent tool:
-  description: "Gen <N>: coherence check"
+  description: "Gen <N>: coherence check (batch)"
   subagent_type: "syndicate:coherence"
   prompt: |
     Generation: <N>
-    Branch: <current branch>
+    Branch: <list all variants, marking best, e.g. gen-3-b (best), gen-3-a, gen-3-c>
+    Variants tried: <count>
 
-    Recent scores:
+    Scores:
+    <each variant with its score and change description>
+
+    Recent score trajectory (winning variants only):
     <last 10 lines of metrics/scores.jsonl>
 
     Complexity trend:
@@ -74,11 +83,13 @@ Agent tool:
     Git log (last 10):
     <git log --oneline -10>
 
-    Last change (file stats only):
-    <git diff HEAD~1 --stat>
+    Last change (file stats only, provisional winner by score):
+    <git diff of highest-scoring branch --stat>
 
     Respond as JSON only.
 ```
+
+These changes are to the dynamic invocation prompt, not the static system prompt in `agents/coherence.md`. The coherence firewall is not affected.
 
 The coherence agent's response omits `generation`. Add the current generation number before appending to `coherence-log.jsonl`.
 
@@ -96,10 +107,12 @@ All metrics files are append-only JSONL in `metrics/`.
 {"generation": 1, "scores": {"input_validation": 2, "error_messages": 1}, "avg": 1.5, "model": "haiku", "criteria_changed": false, "timestamp": "2026-03-23T14:30:00Z"}
 ```
 
+Only the winning variant's score is appended per generation step. All variant scores are recorded in `branches.jsonl`. This keeps the coherence agent's score trajectory clean: one entry per generation, not one per variant.
+
 ### complexity.jsonl
 
 ```jsonl
-{"generation": 1, "skill_tokens": 45, "prompt_tokens": 12, "file_count": 3, "learned_agent_count": 0, "learned_agent_invocations": 0}
+{"generation": 1, "skill_tokens": 45, "prompt_tokens": 12, "file_count": 3, "learned_agent_count": 0, "learned_agent_invocations": 0, "variants_tried": 1}
 ```
 
 Count non-retired entries in `learned-agents/registry.jsonl` for `learned_agent_count`. For `learned_agent_invocations`, count the learned agents invoked during the current generation.
@@ -113,25 +126,29 @@ Count non-retired entries in `learned-agents/registry.jsonl` for `learned_agent_
 ### archive/branches.jsonl
 
 ```jsonl
-{"generation": 1, "branch": "gen-1", "parent": "seed", "score": 1.5, "pruned": false}
+{"generation": 3, "variant": "a", "branch": "gen-3-a", "parent": "gen-2-a", "score": 3.2, "pruned": true, "change": "switched to grid layout"}
+{"generation": 3, "variant": "b", "branch": "gen-3-b", "parent": "gen-2-a", "score": 4.1, "pruned": false, "change": "added responsive breakpoints"}
 ```
+
+One line per variant. New fields: `variant` (letter within the generation), `change` (one sentence describing what this branch tried). Only the winning variant has `pruned: false`.
 
 ## Git Workflow
 
-Each generation gets a branch. Commit messages should be a single sentence.
+Each generation step may produce multiple variant branches (`gen-N-a`, `gen-N-b`, etc.). The winning variant becomes the parent for the next generation. Commit messages should be a single sentence.
 
 At bootstrap, the initial commit is tagged `seed`. Generation 1 branches from `seed`.
 
 ```bash
-git checkout -b gen-<N> <parent-branch>
+# For each variant in parallel:
+git checkout -b gen-<N>-<V> <parent-branch>
 # ... make changes, produce attempt ...
 git add -A
-git commit -m "gen-<N>: <one sentence>"
+git commit -m "gen-<N>-<V>: <one sentence>"
 ```
 
 ### Parent Selection
 
-Read `archive/branches.jsonl`. Highest-scoring non-pruned branch ~70% of the time. Random non-pruned branch ~30% for exploration.
+Read `archive/branches.jsonl`. Select from winning variants only (non-pruned branches). Highest-scoring ~70% of the time. Random ~30% for exploration.
 
 ## Promoting Learnings
 
