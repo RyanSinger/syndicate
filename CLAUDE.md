@@ -36,7 +36,7 @@ The coherence firewall is the key architectural invariant. Without it, the syste
 - Subagents are invoked using the Agent tool. Plugin agents (`syndicate:task`, `syndicate:coherence`) have static system prompts; dynamic context goes in the prompt parameter
 - Metrics files (`scores.jsonl`, `complexity.jsonl`, `coherence-log.jsonl`) are append-only JSONL in `syndicate/metrics/`
 - Branch records (`branches.jsonl`) are append-only JSONL in `syndicate/archive/`
-- Each generation gets its own git branch (`gen-N`), branched from the best-scoring non-pruned parent
+- Each generation may produce parallel variant branches (`gen-N-a`, `gen-N-b`, etc.) in separate worktrees. The best-scoring variant survives; others are pruned
 - Token efficiency is critical: every word in skills/prompts compounds across every task agent call and generation
 - `skills-manifest.jsonl` tracks provenance for domain skills (both imported from plugins and locally promoted)
 - `learned-agents/registry.jsonl` tracks lifecycle of promoted agents
