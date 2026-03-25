@@ -130,25 +130,36 @@ Count non-retired entries in `learned-agents/registry.jsonl` for `learned_agent_
 {"generation": 3, "variant": "b", "branch": "gen-3-b", "parent": "gen-2-a", "score": 4.1, "pruned": false, "change": "added responsive breakpoints"}
 ```
 
-One line per variant. New fields: `variant` (letter within the generation), `change` (one sentence describing what this branch tried). Only the winning variant has `pruned: false`.
+One line per variant. The `branch` field stores the logical variant name (e.g., `gen-3-b`), not the ephemeral worktree branch name. The `parent` field references the previous generation's winning variant. Since squash-merges land on `syndicate/run-<N>`, the parent for all variants in a generation is the tip of that branch. Only the winning variant has `pruned: false`.
 
 ## Git Workflow
 
-Each generation step may produce multiple variant branches (`gen-N-a`, `gen-N-b`, etc.). The winning variant becomes the parent for the next generation. Commit messages should be a single sentence.
+### Bootstrap
 
-At bootstrap, the initial commit is tagged `seed`. Generation 1 branches from `seed`.
+At bootstrap, detect the PR target branch (`git symbolic-ref refs/remotes/origin/HEAD`, fall back to `main`). If no remote, record `none`. Write the result to `syndicate/.pr-target`.
 
-```bash
-# For each variant in parallel:
-git checkout -b gen-<N>-<V> <parent-branch>
-# ... make changes, produce attempt ...
-git add -A
-git commit -m "gen-<N>-<V>: <one sentence>"
-```
+Create `syndicate/run-<N>` off the current HEAD (N increments if prior runs exist). Commit the initial `syndicate/` directory. Tag it `syndicate-seed-<N>` (local only, not pushed).
 
-### Parent Selection
+### Generation Branches
 
-Read `archive/branches.jsonl`. Select from winning variants only (non-pruned branches). Highest-scoring ~70% of the time. Random ~30% for exploration.
+Variant branches are ephemeral. Claude Code's `isolation: "worktree"` creates them automatically when dispatching task agents. After scoring:
+
+Squash-merge the winning variant onto `syndicate/run-<N>`:
+
+    git checkout syndicate/run-<N>
+    git merge --squash <worktree-branch>
+    git commit -m "gen-<G>: <one sentence>"
+
+Force-remove all variant worktrees and delete their branches:
+
+    git worktree remove --force <worktree-path>
+    git branch -D <worktree-branch>
+
+After cleanup, only `syndicate/run-<N>` exists. The parent for the next generation is always the tip of this branch.
+
+### Completion
+
+On stopping, commit the final state (deliverable + `syndicate/` directory) on `syndicate/run-<N>`. If `syndicate/.pr-target` is not `none`, push the branch and open a PR targeting that branch. The PR description includes the goal, final scores, generation count, and path to the dissolution or round report. If no remote, tell the user which branch contains the deliverable.
 
 ## Promoting Learnings
 
@@ -292,6 +303,8 @@ Generation numbering is **global**. If round 1 ends at gen-12, round 2 starts at
 
 **What persists:** `goal.md` (fixed forever), `meta-notes.md` (distilled at round boundaries), `learned-agents/` (evolving), all `metrics/*`, `archive/branches.jsonl`, `venture.jsonl`.
 
+**Branch lifetime:** One `syndicate/run-<N>` branch spans all rounds. Round boundaries do not create new branches. The PR is opened at dissolution, not at each round boundary. Round reports are committed to the branch as they are written.
+
 ### venture.jsonl
 
 Created at the first round boundary. One line per completed round.
@@ -375,6 +388,7 @@ After bootstrap, `syndicate/` in the project root contains:
 
 ```
 syndicate/
+├── .pr-target           # PR target branch (detected at bootstrap)
 ├── goal.md              # User's goal (written gen 1, fixed)
 ├── criteria.md          # Acceptance criteria (evolves)
 ├── meta-notes.md        # Persistent memory (distilled periodically)
