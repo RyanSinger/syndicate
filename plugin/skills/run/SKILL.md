@@ -33,13 +33,16 @@ Skip the coherence check for generation 1. There is no trajectory to evaluate ye
 ## Every Generation After That
 
 1. **Diagnose.** What's weakest in the last attempt? Are the criteria still measuring the right things?
-2. **Propose one small change.** To skills, task prompt, or criteria. State what you expect it to improve and why. Smaller changes give clearer signal.
-3. **Attempt.** Produce a new version of the deliverable using a task agent subagent.
-4. **Score.** Evaluate honestly against current criteria.
-5. **Coherence check.** A separate agent reviews your trajectory (scores and complexity only, never your code) and decides: continue, flag, or prune. On `flag`, you must change your approach for the next generation: different parent, revised skill, or model change. Each `flag` increments the plateau counter; `continue` or `prune` resets it.
-6. **Record what you learned.** Write observations in `meta-notes.md`. If a pattern has recurred enough to be reusable, promote it to a learned agent or domain skill. Distill meta-notes when they get too long.
+2. **Propose 1 to N changes.** Each targets the diagnosed weakness from a different angle. Decide how many based on confidence: 1 if the path is obvious, 3 to 4 if stuck or exploring early. State what each change is expected to improve and why.
+3. **Attempt all in parallel.** Each proposed change gets its own task agent running in a separate git worktree (`isolation: "worktree"`). All run simultaneously as background agents. Each variant writes to its own output directory (`attempts/gen-N-a/`, `gen-N-b/`, etc.).
+4. **Score all.** Evaluate each variant honestly against current criteria. Record the winning variant's score in `scores.jsonl`. Record all variants in `branches.jsonl`.
+5. **Coherence check on batch.** A separate agent reviews the batch: all variant scores, the spread, complexity growth, and the provisional winner's diff stats. It decides: continue, flag, or prune. On `flag`, you must change your approach. Each `flag` increments the plateau counter; `continue` or `prune` resets it. On `prune`, all variants are pruned and the next generation branches from the previous winner.
+6. **Keep best, prune rest.** The highest-scoring variant becomes the parent for the next generation. Other variants are marked pruned in `branches.jsonl`.
+7. **Record what you learned.** Write observations in `meta-notes.md`. Note what was tried in parallel, what worked, what didn't. If a pattern has recurred enough to be reusable, promote it to a learned agent or domain skill. Distill meta-notes when they get too long.
 
 The syndicate governs itself. No generation count from the user.
+
+When to go wide (3 to 4 variants): low scores, unclear direction, first few generations, criteria just changed. When to go narrow (1 to 2 variants): scores improving steadily, clear next step, approaching convergence. All variants in a generation use the same model.
 
 ## The Coherence Firewall
 
