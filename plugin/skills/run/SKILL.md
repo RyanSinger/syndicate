@@ -11,7 +11,15 @@ A structurally separate coherence agent watches the trajectory and shuts things 
 
 ## Setup
 
-If `syndicate/` doesn't exist in the project root, bootstrap it by copying this skill's `templates/` directory there, initializing a git repo, creating an initial commit, and tagging it `seed`. If it exists, cd into it and pick up where you left off.
+If `syndicate/` doesn't exist in the project root, bootstrap it:
+
+1. Copy this skill's `templates/` directory to `syndicate/` in the project root.
+2. Detect the PR target branch (`git symbolic-ref refs/remotes/origin/HEAD`, fall back to `main`). If no remote exists, record `none`. Write the result to `syndicate/.pr-target`.
+3. Create a branch `syndicate/run-<N>` off the current HEAD (N increments if prior runs exist in the branch namespace).
+4. Commit the `syndicate/` directory on that branch.
+5. Tag it `syndicate-seed-<N>` (local only).
+
+If `syndicate/` exists, you are resuming. Check out the existing `syndicate/run-<N>` branch and pick up where you left off.
 
 ## Generation 0: Scope of Work
 
@@ -37,7 +45,7 @@ Skip the coherence check for generation 1. There is no trajectory to evaluate ye
 3. **Attempt all in parallel.** Each proposed change gets its own task agent running in a separate git worktree (`isolation: "worktree"`). All run simultaneously as background agents. Each variant writes to its own output directory (`attempts/gen-N-a/`, `gen-N-b/`, etc.).
 4. **Score all.** Evaluate each variant honestly against current criteria. Record the winning variant's score in `scores.jsonl`. Record all variants in `branches.jsonl`.
 5. **Coherence check on batch.** A separate agent reviews the batch: all variant scores, the spread, complexity growth, and the provisional winner's diff stats. It decides: continue, flag, or prune. On `flag`, you must change your approach. Each `flag` increments the plateau counter; `continue` or `prune` resets it. On `prune`, all variants are pruned and the next generation branches from the previous winner.
-6. **Keep best, prune rest.** The highest-scoring variant becomes the parent for the next generation. Other variants are marked pruned in `branches.jsonl`.
+6. **Squash-merge best, clean up rest.** Squash-merge the winning variant onto `syndicate/run-<N>` as a single commit: `gen-<G>: <one sentence>`. Mark other variants pruned in `branches.jsonl`. Force-remove all variant worktrees and delete their branches immediately.
 7. **Record what you learned.** Write observations in `meta-notes.md`. Note what was tried in parallel, what worked, what didn't. If a pattern has recurred enough to be reusable, promote it to a learned agent or domain skill. Distill meta-notes when they get too long.
 
 The syndicate governs itself. No generation count from the user.
@@ -78,7 +86,7 @@ Start the task agent on **opus**. Downgrade to **sonnet** if evidence shows the 
 - **All branches pruned:** no viable parents. Report best result.
 - **Sustained plateau:** flagged 3+ consecutive times with no promising direction.
 
-On stopping, copy the best attempt to the project root.
+On stopping, copy the best attempt to the project root. Commit the final state on `syndicate/run-<N>`. Read `syndicate/.pr-target`: if it is not `none`, push the branch and open a PR targeting that branch. The PR description includes the goal, final scores, generation count, and path to the dissolution or round report. If no remote exists, tell the user which branch contains the deliverable.
 
 **Job mode:** Write a dissolution report to `reports/final.md` summarizing what was accomplished and what was learned. The syndicate dissolves.
 
