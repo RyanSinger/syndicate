@@ -138,12 +138,12 @@ Run ONE generation following the "Every Generation After That" procedure in SKIL
 1. Read the last attempt (check `state.json` for `current_generation`, look at `syndicate/attempts/gen-<N>/`).
 2. Read `syndicate/metrics/scores.jsonl` (last 10 lines), `syndicate/metrics/coherence-log.jsonl` (last 5 lines), `syndicate/archive/branches.jsonl`.
 3. Check `syndicate/learned-agents/registry.jsonl` for agents to invoke.
-4. **Diagnose** weaknesses. **Propose** one small change.
+4. **Diagnose** weaknesses. **Propose** 1 to N changes (more when stuck, fewer when converging).
 5. Select parent branch per the parent selection rule in loop.md.
-6. **Attempt**: invoke the task agent subagent per loop.md.
-7. **Score**: evaluate against criteria. Append to `metrics/scores.jsonl`.
+6. **Attempt all in parallel**: invoke one task agent per proposed change, each in its own worktree per loop.md. Wait for all to complete.
+7. **Score all variants**: evaluate each against criteria. Append winning variant to `metrics/scores.jsonl`.
 8. Record complexity in `metrics/complexity.jsonl`.
-9. Record branch in `archive/branches.jsonl`.
+9. Record all variants in `archive/branches.jsonl` (one line per variant, winning variant has `pruned: false`).
 10. **Coherence check**: invoke the coherence agent per loop.md. Append to `metrics/coherence-log.jsonl`.
 11. **Record learnings** in `meta-notes.md`. Promote patterns if ready.
 12. Git commit: `git add -A && git commit -m "gen-<N>: <one sentence>"`.
