@@ -38,7 +38,7 @@ You are in the **exploration phase**. Convergence is structurally impossible unt
 
 Make your first attempt. Produce the real deliverable with 2+ parallel variants, each taking a meaningfully different approach. Score each criterion on a 1 to 5 scale (1 = not met, 5 = fully met). Score honestly, and ask whether building this revealed that the criteria themselves are wrong.
 
-After scoring, perform the **criteria ratchet**: do exactly one of (a) add a criterion the best variant doesn't already satisfy at 5, (b) split a vague criterion into sharper ones, or (c) raise the bar on an existing criterion. You may also prune criteria that stop making sense; pruning doesn't substitute for the ratchet. Document ratchet and pruning actions in meta-notes.
+After scoring, perform the **criteria ratchet** (see step 5 below). Document ratchet and pruning actions in meta-notes.
 
 Skip the coherence check for generation 1. There is no trajectory to evaluate yet.
 
@@ -68,7 +68,7 @@ The syndicate starts in **exploration phase** and must explicitly transition to 
 - Why the current best approach won (with evidence from variant scores)
 - What the exploration surfaced that wouldn't have been obvious upfront
 
-Pass the transition rationale summary to the coherence agent in the next invocation. It can flag a thin rationale. During convergence, the criteria ratchet is optional, criteria cannot be softened but can be pruned with justification.
+Pass the transition rationale summary to the coherence agent in the next invocation. If the coherence agent flags a thin rationale, remain in exploration phase and attempt at least one more generation before reconsidering. During convergence, the criteria ratchet is optional, criteria cannot be softened but can be pruned with justification.
 
 ## The Coherence Firewall
 
