@@ -34,23 +34,41 @@ The criteria are still hypotheses. They will evolve as the syndicate learns. But
 
 ## Generation 1: Start by Doing
 
-Make your first attempt. Produce the real deliverable. Score each criterion on a 1 to 5 scale (1 = not met, 5 = fully met). Then score yourself honestly, and ask whether building this revealed that the criteria themselves are wrong. Revise them if so. This isn't failure, it's learning.
+You are in the **exploration phase**. Convergence is structurally impossible until you transition out.
+
+Make your first attempt. Produce the real deliverable with 2+ parallel variants, each taking a meaningfully different approach. Score each criterion on a 1 to 5 scale (1 = not met, 5 = fully met). Score honestly, and ask whether building this revealed that the criteria themselves are wrong.
+
+After scoring, perform the **criteria ratchet**: do exactly one of (a) add a criterion the best variant doesn't already satisfy at 5, (b) split a vague criterion into sharper ones, or (c) raise the bar on an existing criterion. You may also prune criteria that stop making sense; pruning doesn't substitute for the ratchet. Document ratchet and pruning actions in meta-notes.
 
 Skip the coherence check for generation 1. There is no trajectory to evaluate yet.
 
 ## Every Generation After That
 
 1. **Diagnose.** What's weakest in the last attempt? Are the criteria still measuring the right things?
-2. **Propose 1 to N changes.** Each targets the diagnosed weakness from a different angle. Decide how many based on confidence: 1 if the path is obvious, 3 to 4 if stuck or exploring early. State what each change is expected to improve and why.
+2. **Propose changes.** During exploration: 2+ variants, each taking a meaningfully different approach. During convergence: 1 to N based on confidence. State what each change is expected to improve and why.
 3. **Attempt all in parallel.** Each proposed change gets its own task agent running in a separate git worktree (`isolation: "worktree"`). All run simultaneously as background agents. Each variant writes to its own output directory (`attempts/gen-N-a/`, `gen-N-b/`, etc.).
-4. **Score all.** Evaluate each variant honestly against current criteria. Record the winning variant's score in `scores.jsonl`. Record all variants in `branches.jsonl`.
-5. **Coherence check on batch.** A separate agent reviews the batch: all variant scores, the spread, complexity growth, and the provisional winner's diff stats. It decides: continue, flag, or prune. On `flag`, you must change your approach. Each `flag` increments the plateau counter; `continue` or `prune` resets it. On `prune`, all variants are pruned and the next generation branches from the previous winner.
-6. **Squash-merge best, clean up rest.** Squash-merge the winning variant onto `syndicate/run-<N>` as a single commit: `gen-<G>: <one sentence>`. Mark other variants pruned in `branches.jsonl`. Force-remove all variant worktrees and delete their branches immediately.
-7. **Record what you learned.** Write observations in `meta-notes.md`. Note what was tried in parallel, what worked, what didn't. If a pattern has recurred enough to be reusable, promote it to a learned agent or domain skill. Distill meta-notes when they get too long.
+4. **Score all.** Evaluate each variant honestly against current criteria. Record the winning variant's score in `scores.jsonl` (include `phase` and `ratchet` fields). Record all variants in `branches.jsonl`.
+5. **Ratchet (exploration only).** After scoring, perform exactly one of: (a) add a criterion the best variant doesn't already satisfy at 5, (b) split a vague criterion into sharper ones, (c) raise the bar on an existing criterion. You may also prune criteria that stop making sense; pruning doesn't substitute for the ratchet. Document ratchet and pruning actions in meta-notes.
+6. **Coherence check on batch.** A separate agent reviews the batch: all variant scores, the spread, complexity growth, and the provisional winner's diff stats. Include the current phase and ratchet action in the coherence prompt. It decides: continue, flag, or prune. On `flag`, you must change your approach. Each `flag` increments the plateau counter; `continue` or `prune` resets it. On `prune`, all variants are pruned and the next generation branches from the previous winner.
+7. **Squash-merge best, clean up rest.** Squash-merge the winning variant onto `syndicate/run-<N>` as a single commit: `gen-<G>: <one sentence>`. Mark other variants pruned in `branches.jsonl`. Force-remove all variant worktrees and delete their branches immediately.
+8. **Record what you learned.** Write observations in `meta-notes.md`. Note what was tried in parallel, what worked, what didn't. If a pattern has recurred enough to be reusable, promote it to a learned agent or domain skill. Distill meta-notes when they get too long.
 
 The syndicate governs itself. No generation count from the user.
 
-When to go wide (3 to 4 variants): low scores, unclear direction, first few generations, criteria just changed. When to go narrow (1 to 2 variants): scores improving steadily, clear next step, approaching convergence. All variants in a generation use the same model.
+During exploration, go wide: always 2+ variants with genuinely different approaches. During convergence, go narrow when confident (1 to 2 variants) or wide when stuck (3 to 4). All variants in a generation use the same model.
+
+## Phase Transition
+
+The syndicate starts in **exploration phase** and must explicitly transition to **convergence phase** before convergence stopping conditions apply.
+
+**Eligibility:** at least 3 exploration generations complete, and at least 2 genuinely different approaches tried across variants (not just parameter tweaks).
+
+**To transition**, write a transition rationale to meta-notes:
+- What approaches were explored and how they compared
+- Why the current best approach won (with evidence from variant scores)
+- What the exploration surfaced that wouldn't have been obvious upfront
+
+Pass the transition rationale summary to the coherence agent in the next invocation. It can flag a thin rationale. During convergence, the criteria ratchet is optional, criteria cannot be softened but can be pruned with justification.
 
 ## The Coherence Firewall
 
@@ -82,9 +100,9 @@ Start the task agent on **opus**. Downgrade to **sonnet** if evidence shows the 
 
 ## Stopping Conditions
 
-- **Converged:** average score 4.5 or above for 2+ generations. Ship the best attempt.
-- **All branches pruned:** no viable parents. Report best result.
-- **Sustained plateau:** flagged 3+ consecutive times with no promising direction.
+- **Converged:** average score 4.8 or above for 2+ consecutive generations, and the syndicate is in convergence phase. Cannot trigger during exploration.
+- **All branches pruned:** no viable parents. Report best result. Either phase.
+- **Sustained plateau:** flagged 3+ consecutive times. Either phase. During exploration, this means variants aren't producing useful diversity. During convergence, refinement has stalled.
 
 On stopping, copy the best attempt to the project root. Commit the final state on `syndicate/run-<N>`. Read `syndicate/.pr-target`: if it is not `none`, push the branch and open a PR targeting that branch. The PR description includes the goal, final scores, generation count, and path to the dissolution or round report. If no remote exists, tell the user which branch contains the deliverable.
 
@@ -96,7 +114,7 @@ On stopping, copy the best attempt to the project root. Commit the final state o
 
 If the user's intent is ongoing improvement (not a one-shot deliverable), run as a venture. When in doubt, default to job. The user can always say "keep going."
 
-A venture is a sequence of **rounds**. Each round is a normal evolution cycle that converges and ships. Instead of dissolving, the syndicate then enters a **discovery phase**: review what shipped, identify the highest-value improvement, write new criteria targeting it, and start the next round. Generation numbering stays global across rounds.
+A venture is a sequence of **rounds**. Each round is a normal evolution cycle that converges and ships. Each new round starts back in exploration phase, so the full diverge-then-converge cycle repeats. Instead of dissolving, the syndicate then enters a **discovery phase**: review what shipped, identify the highest-value improvement, write new criteria targeting it, and start the next round. Generation numbering stays global across rounds.
 
 The user controls duration by controlling the session. There is no token budget. The syndicate keeps finding improvements until the user stops it or discovery finds nothing worth improving.
 
@@ -105,6 +123,7 @@ For discovery procedure and round transition mechanics, read `references/loop.md
 ## Principles
 
 - Ship a good deliverable. Don't run forever.
+- Explore before you converge. Early generations are for discovery, not optimization.
 - Small changes, clear signal. You get many generations.
 - Criteria are hypotheses. Revise honestly, but don't soften them to inflate scores.
 - Every word costs tokens. Tight skills compound savings.
