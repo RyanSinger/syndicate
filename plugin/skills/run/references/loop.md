@@ -68,8 +68,10 @@ Agent tool:
   subagent_type: "syndicate:coherence"
   prompt: |
     Generation: <N>
+    Phase: <exploration (gen N of minimum 3) | convergence | convergence (transitioned at gen N)>
     Branch: <list all variants, marking best, e.g. gen-3-b (best), gen-3-a, gen-3-c>
     Variants tried: <count>
+    Ratchet: <ratchet action taken, e.g. "added: error recovery" or "raised: test coverage" or "none (convergence phase)">
 
     Scores:
     <each variant with its score and change description>
@@ -89,6 +91,12 @@ Agent tool:
     Respond as JSON only.
 ```
 
+On the first generation after transition, use `Phase: convergence (transitioned at gen N)` and add:
+
+```
+    Transition rationale: <one-sentence summary of why exploration ended>
+```
+
 These changes are to the dynamic invocation prompt, not the static system prompt in `agents/coherence.md`. The coherence firewall is not affected.
 
 The coherence agent's response omits `generation`. Add the current generation number before appending to `coherence-log.jsonl`.
@@ -104,8 +112,11 @@ All metrics files are append-only JSONL in `metrics/`.
 ### scores.jsonl
 
 ```jsonl
-{"generation": 1, "scores": {"input_validation": 2, "error_messages": 1}, "avg": 1.5, "model": "haiku", "criteria_changed": false, "timestamp": "2026-03-23T14:30:00Z"}
+{"generation": 1, "scores": {"input_validation": 2, "error_messages": 1}, "avg": 1.5, "model": "opus", "criteria_changed": false, "phase": "exploration", "ratchet": "added: error recovery", "timestamp": "2026-03-23T14:30:00Z"}
 ```
+
+- `phase`: `"exploration"` or `"convergence"`
+- `ratchet`: describes the ratchet action taken. Required during exploration, null during convergence if none taken. Include pruning if applicable: `"added: X, pruned: Y (reason)"`.
 
 Only the winning variant's score is appended per generation step. All variant scores are recorded in `branches.jsonl`. This keeps the coherence agent's score trajectory clean: one entry per generation, not one per variant.
 
