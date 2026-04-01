@@ -103,7 +103,7 @@ The coherence agent's response omits `generation`. Add the current generation nu
 
 If the coherence agent returns invalid JSON, treat it as `flag` with reason "coherence agent returned invalid response" and log that to `coherence-log.jsonl`.
 
-For flag handling behavior, see SKILL.md step 5.
+For flag handling behavior, see SKILL.md step 6.
 
 ## Metrics Formats
 
