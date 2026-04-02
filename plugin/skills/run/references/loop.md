@@ -117,6 +117,7 @@ All metrics files are append-only JSONL in `metrics/`.
 
 - `phase`: `"exploration"` or `"convergence"`
 - `ratchet`: describes the ratchet action taken. Required during exploration, null during convergence if none taken. Include pruning if applicable: `"added: X, pruned: Y (reason)"`.
+- `criteria_changed`: still present for backward compatibility. Set to `true` whenever criteria were modified for any reason. The `ratchet` field provides the specific action; `criteria_changed` is the coarse signal the coherence agent uses for trajectory analysis.
 
 Only the winning variant's score is appended per generation step. All variant scores are recorded in `branches.jsonl`. This keeps the coherence agent's score trajectory clean: one entry per generation, not one per variant.
 

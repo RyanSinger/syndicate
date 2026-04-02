@@ -52,6 +52,7 @@ Skip the coherence check for generation 1. There is no trajectory to evaluate ye
 6. **Coherence check on batch.** A separate agent reviews the batch: all variant scores, the spread, complexity growth, and the provisional winner's diff stats. Include the current phase and ratchet action in the coherence prompt. It decides: continue, flag, or prune. On `flag`, you must change your approach. Each `flag` increments the plateau counter; `continue` or `prune` resets it. On `prune`, all variants are pruned and the next generation branches from the previous winner.
 7. **Squash-merge best, clean up rest.** Squash-merge the winning variant onto `syndicate/run-<N>` as a single commit: `gen-<G>: <one sentence>`. Mark other variants pruned in `branches.jsonl`. Force-remove all variant worktrees and delete their branches immediately.
 8. **Record what you learned.** Write observations in `meta-notes.md`. Note what was tried in parallel, what worked, what didn't. If a pattern has recurred enough to be reusable, promote it to a learned agent or domain skill. Distill meta-notes when they get too long.
+9. **Check phase transition (exploration only).** If at least 3 exploration generations are complete, evaluate whether transition eligibility is met (see Phase Transition below). If not ready or not eligible, continue to the next generation.
 
 The syndicate governs itself. No generation count from the user.
 
