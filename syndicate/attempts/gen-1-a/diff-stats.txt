@@ -1,0 +1,5 @@
+ plugin/skills/run/SKILL.md              |  7 ++--
+ plugin/skills/run/references/loop.md    | 70 +++++++++++++++++++++++++++------
+ syndicate/attempts/gen-1-a/rationale.md | 64 ++++++++++++++++++++++++++++++
+ syndicate/attempts/gen-1-a/summary.md   | 20 ++++++++++
+ 4 files changed, 147 insertions(+), 14 deletions(-)

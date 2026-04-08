@@ -1,0 +1,4 @@
+ plugin/agents/task.md                |  2 ++
+ plugin/skills/run/SKILL.md           |  5 +++--
+ plugin/skills/run/references/loop.md | 33 +++++++++++++++++++++++++++++++--
+ 3 files changed, 36 insertions(+), 4 deletions(-)
