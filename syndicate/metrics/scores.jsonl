@@ -1,0 +1,1 @@
+{"generation": 1, "scores": {"promotion_end_to_end": 5, "research_grounded": 4, "plugin_still_works": 5, "net_improvement": 3, "token_disciplined": 4}, "avg": 4.2, "model": "opus", "criteria_changed": true, "phase": "exploration", "ratchet": "added: non_promotion_improvement (forces next gen to broaden beyond promotion)", "timestamp": "2026-04-08T12:00:00Z"}

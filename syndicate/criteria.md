@@ -14,5 +14,8 @@ Bootstrapping, Gen 0 scope conversation, task and coherence subagent invocation,
 ## 4. Net improvement over current plugin
 Changes address real weaknesses beyond the promotion feature alone. Weaknesses identified from reading current `meta-notes.md`, `loop.md`, `architecture.md`, prior run history, and research. Each change states what it improves and the mechanism.
 
-## 5. Token-disciplined
+## 5. Addresses non-promotion weaknesses
+The winner of Gen 1 (1-a) is excellent on promotion but deliberately narrow. This criterion forces later generations to carry the promotion work forward AND land at least one additional meaningful improvement elsewhere in the plugin: scoring reliability, variant diversity, convergence detection, coherence prompt, token efficiency, or similar. Ideas surfaced by 1-b's research (pairwise scoring, named mutation operators) are good candidates but not mandatory.
+
+## 6. Token-disciplined
 Skills and prompts do not bloat gratuitously. Net word-count delta on `plugin/skills/run/SKILL.md` + `plugin/skills/run/references/loop.md` is tracked; large additions must earn their keep with clear value. Coherence firewall integrity preserved: no code, skills, or prompts leak into the coherence agent's context.

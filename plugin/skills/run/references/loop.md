@@ -33,9 +33,9 @@ Dispatch all variants simultaneously. After all complete, check out each variant
 
 ### Learned Agents
 
-Learned agents are specialized subagents the meta-agent creates from recurring patterns in meta-notes. They live in `learned-agents/<name>.md` in the project's `syndicate/` directory (not the skill-bundled `agents/` directory, which is fixed).
+Learned agents are specialized subagents promoted from recurring patterns in meta-notes. They live at user level (`~/.claude/agents/<name>.md`) by default so every future syndicate run across any project can discover and reuse them. Project-scoped agents (rare, project-specific) live in `syndicate/learned-agents/<name>.md`. See "Promoting Learnings" for the promotion and discovery rules.
 
-Before invoking, read the registry (`learned-agents/registry.jsonl`) and each candidate agent's "When to Invoke" field. Only invoke agents whose trigger conditions match the current situation. Most generations invoke zero learned agents.
+Before invoking, read both registries (`~/.claude/syndicate-manifest.jsonl` for user-level, `syndicate/learned-agents/registry.jsonl` for project-level) and each candidate agent's "When to Invoke" field. Only invoke agents whose trigger conditions match the current situation. Most generations invoke zero learned agents.
 
 ```
 Agent tool:
@@ -180,12 +180,24 @@ After recording observations in meta-notes, evaluate whether any pattern is read
 - **Actionability:** it's reusable, not just an observation
 
 The meta-agent decides the form:
-- **Procedure** (takes input, produces output, works independently) → create a **learned agent** in `learned-agents/<name>.md`
-- **Knowledge** (techniques, patterns, domain facts that inform work) → create or update a **domain skill** in `skills/domain/<name>.md`
+- **Procedure** (takes input, produces output, works independently) → create a **learned agent** (default path: `~/.claude/agents/<name>.md`)
+- **Knowledge** (techniques, patterns, domain facts that inform work) → create or update a **domain skill** (default path: `~/.claude/skills/<name>/SKILL.md`)
+
+### Promotion Scope: User vs Project
+
+Default to **user-level** promotion. Learnings are broadly useful unless proven otherwise, and cross-run accumulation is the whole point: a pattern discovered in project A should sharpen future runs in projects B, C, and D. This mirrors lifelong skill libraries in Voyager (Wang et al., 2023) where compounding a persistent library of executable skills across tasks is what drives superhuman generalization.
+
+**Install project-level only when** the learning is demonstrably project-specific: it references paths, names, schemas, or conventions that would be meaningless or actively misleading elsewhere. Note the opt-out reason in meta-notes.
+
+### Collision Policy
+
+If the target user-level path already exists (`~/.claude/agents/<name>.md` or `~/.claude/skills/<name>/SKILL.md`), **fall back to project-level** install in `syndicate/learned-agents/<name>.md` or `syndicate/skills/domain/<name>.md` and record the collision in the user manifest with `"collision": true` and `"fallback_scope": "project"`. Do not overwrite, merge, or auto-version user-level artifacts from other runs. Revision of an existing user-level artifact is allowed only when the current run is the original author (matching `source_run` in the user manifest), in which case update in place and bump `last_revised`.
+
+One policy, no branches. Preserves work from prior runs, keeps this run unblocked, and leaves explicit reconciliation to the meta-agent of a later run if it notices the collision.
 
 ### Creating a Learned Agent
 
-Write the agent definition to `learned-agents/<name>.md`:
+Write the agent definition to the chosen path (user-level default: `~/.claude/agents/<name>.md`; project fallback: `syndicate/learned-agents/<name>.md`):
 
 ```markdown
 # <Agent Name>
@@ -205,13 +217,21 @@ Promoted at generation <N>. Last revised generation <M>.
 <What this agent needs to see as input>
 ```
 
-Append to `learned-agents/registry.jsonl`:
+Append a provenance line to the **user manifest** `~/.claude/syndicate-manifest.jsonl` (user-level installs) or to the **project registry** `syndicate/learned-agents/registry.jsonl` (project fallback). The user manifest is the cross-run source of truth; the project registry mirrors it only for project-scoped artifacts.
+
+User manifest line format:
+
+```jsonl
+{"kind": "agent", "name": "<name>", "path": "~/.claude/agents/<name>.md", "scope": "user", "source_run": "<project-slug>/run-<N>", "source_project": "<project-path>", "promoted_at": "2026-04-08T12:00:00Z", "last_revised": "2026-04-08T12:00:00Z", "description": "<one sentence from agent frontmatter>", "collision": false, "fallback_scope": null, "retired": false}
+```
+
+Project registry line (unchanged, for project fallback only):
 
 ```jsonl
 {"name": "<name>", "promoted_at": <gen>, "last_revised": <gen>, "invocations": 0, "last_invoked": null, "retired": false}
 ```
 
-Note the promotion in meta-notes: `Promoted to agent: <name> (reason: <one sentence>)`.
+Note the promotion in meta-notes: `Promoted to agent: <name> at <scope> (reason: <one sentence>)`.
 
 ### Evolving Learned Agents and Skills
 
@@ -220,6 +240,22 @@ Learned agents and domain skills are living documents. Revise them as understand
 ### Retiring Learned Agents
 
 Retire learned agents that are no longer pulling their weight. Set `retired: true` in the registry. No fixed rules. The coherence agent monitors complexity growth and will flag if proliferation outpaces improvement.
+
+## Discovery at Gen 0
+
+Every fresh syndicate run performs one discovery pass at bootstrap, before writing `goal.md`. The point is to load prior runs' accumulated agents and skills as candidate context so the current run starts from the accumulated state, not from zero. This is the library-compounding behavior Voyager demonstrated in a lifelong learning setting: a persistent skill library carried across tasks is what drives rapid generalization (Wang et al., 2023). Reflexion and ExpeL show the same pattern for textual skill transfer across tasks (Shinn et al., 2023; Zhao et al., 2024).
+
+Procedure:
+
+1. Read `~/.claude/syndicate-manifest.jsonl` if it exists. Skip entries where `retired: true`.
+2. For each non-retired entry, read the `description` field and, if useful, the artifact's frontmatter. Do **not** inline full contents.
+3. Write `syndicate/discovered.jsonl` (one line per candidate): name, kind, path, description. This is per-run ephemeral metadata.
+4. The meta-agent keeps the index in working context so Diagnose and Propose Changes can reference candidates by name and description.
+5. Load full artifact contents **only when** a candidate's trigger conditions match the situation at generation time (same gating as learned-agent invocation). This keeps per-generation token load bounded even as the user library grows.
+
+Claude Code's own discovery rules (user-level skills and agents under `~/.claude/` are automatically available across projects, with user-level taking precedence over project-level on name collision) mean user-level installs are loadable by Claude Code without any path manipulation from the syndicate. The manifest exists so the syndicate itself can reason about provenance, lifecycle, and collisions.
+
+The user manifest is authoritative for syndicate-owned artifacts. A file at `~/.claude/agents/<name>.md` without a manifest entry belongs to the user or another plugin; do not claim, modify, or retire it.
 
 ## Importing External Skills
 
@@ -261,7 +297,7 @@ Imported skills follow the same promotion path as locally-grown skills. When it 
 
 ### skills-manifest.jsonl
 
-Tracks provenance and lifecycle for all domain skills, both imported and locally promoted. One line per skill.
+Tracks provenance and lifecycle for project-scoped domain skills: plugin imports, and local promotions that fell back to project scope because of the collision policy or an explicit project-specific opt-out. User-level locally promoted skills live in `~/.claude/syndicate-manifest.jsonl` instead. One line per skill.
 
 ```jsonl
 {"name": "<name>", "origin": "import", "source_plugin": "<plugin>", "source_path": "<path>", "imported_at": "gen-<N>", "diverged": false, "last_revised": "gen-<N>", "retired": false}
@@ -404,14 +440,15 @@ syndicate/
 ├── goal.md              # User's goal (written gen 1, fixed)
 ├── criteria.md          # Acceptance criteria (evolves)
 ├── meta-notes.md        # Persistent memory (distilled periodically)
+├── discovered.jsonl     # Per-run index of user-level agents/skills found at bootstrap
 ├── venture.jsonl         # Round history (venture mode only, distilled periodically)
-├── skills-manifest.jsonl # Provenance and lifecycle for domain skills
+├── skills-manifest.jsonl # Provenance for project-scoped domain skills
 ├── skills/
 │   ├── approach.md
-│   └── domain/          # Domain-specific skills (promoted or imported)
+│   └── domain/          # Project-scoped domain skills (user-level is the default; this is the fallback)
 ├── prompts/
 │   └── task.md
-├── learned-agents/      # Specialized agents promoted from learnings (evolves)
+├── learned-agents/      # Project-scoped learned agents (user-level is the default; this is the fallback)
 │   └── registry.jsonl
 ├── attempts/
 │   └── gen-N/
@@ -424,4 +461,15 @@ syndicate/
 └── reports/
     ├── round-N.md          # Round boundary reports
     └── final.md            # Dissolution report
+```
+
+User-level (outside any project, shared across all syndicate runs):
+
+```
+~/.claude/
+├── agents/                 # User-level learned agents (default promotion target)
+│   └── <name>.md
+├── skills/                 # User-level domain skills (default promotion target)
+│   └── <name>/SKILL.md
+└── syndicate-manifest.jsonl  # Provenance + lifecycle for all user-level syndicate artifacts
 ```

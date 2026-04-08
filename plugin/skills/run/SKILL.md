@@ -16,8 +16,9 @@ If `syndicate/` doesn't exist in the project root, bootstrap it:
 1. Copy this skill's `templates/` directory to `syndicate/` in the project root.
 2. Detect the PR target branch (`git symbolic-ref refs/remotes/origin/HEAD`, fall back to `main`). If no remote exists, record `none`. Write the result to `syndicate/.pr-target`.
 3. Create a branch `syndicate/run-<N>` off the current HEAD (N increments if prior runs exist in the branch namespace).
-4. Commit the `syndicate/` directory on that branch.
-5. Tag it `syndicate-seed-<N>` (local only).
+4. Run the discovery pass (see `references/loop.md` "Discovery at Gen 0") to index user-level agents and skills accumulated from prior runs into `syndicate/discovered.jsonl`.
+5. Commit the `syndicate/` directory on that branch.
+6. Tag it `syndicate-seed-<N>` (local only).
 
 If `syndicate/` exists, you are resuming. Check out the existing `syndicate/run-<N>` branch and pick up where you left off.
 
@@ -88,7 +89,7 @@ Start the task agent on **opus**. Downgrade to **sonnet** if evidence shows the 
 - `skills-manifest.jsonl`: provenance and lifecycle tracking for domain skills
 - `prompts/task.md`: how the task agent is instructed
 - `criteria.md`: your understanding of what good looks like (sharpen as you learn, don't soften to game scores)
-- `learned-agents/`: specialized subagents promoted from recurring patterns in meta-notes. These are living documents. Revise them as understanding deepens.
+- `learned-agents/`: project-scoped specialized subagents. Most promotions go to user level (`~/.claude/agents/`) so future runs in any project can reuse them; this directory is the project-specific fallback. Living documents: revise as understanding deepens.
 - `meta-notes.md`: observations and learnings, distilled periodically to stay manageable
 
 ## What's Fixed
