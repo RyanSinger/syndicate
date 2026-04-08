@@ -1,0 +1,17 @@
+Gen 2-b diff stats
+
+Baseline (gen-1-a, already in tree):
+ plugin/skills/run/SKILL.md           |  7 ++--
+ plugin/skills/run/references/loop.md | 70 ++++++++++++++++++++++++++-----
+ 2 files changed, 63 insertions(+), 14 deletions(-)
+
+Gen 2-b additions on top of baseline:
+ plugin/skills/run/SKILL.md           |  2 +-
+ plugin/skills/run/references/loop.md | 60 ++++++++++++++++++++++++++++++----
+ 2 files changed, 55 insertions(+), 7 deletions(-)
+
+SKILL.md edit: 1 line in step 8 (under the 5-line cap).
+loop.md additions: empirical-fields paragraph in manifest schema; Discovery
+procedure rewrite (skip flagged, rank, sort, top 10); Discovery Ranking
+Formula section; Auto-Flag Rule section; Record Usage section.
+No new files in plugin/.

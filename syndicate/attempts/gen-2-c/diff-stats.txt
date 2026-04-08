@@ -1,0 +1,31 @@
+Gen 2-c diff stats (token-tightening pass)
+
+File                                              Before  After   Delta
+                                                  lines/  lines/  words
+                                                  words   words
+
+plugin/skills/run/SKILL.md                        133/1673  131/1504  -169 (-10.1%)
+plugin/skills/run/references/loop.md              475/3274  475/3137  -137 (-4.2%)
+plugin/agents/task.md                              13/89    13/77    -12 (-13.5%)
+plugin/skills/run/templates/prompts/task.md         3/9      3/9       0 (untouched, already minimal)
+plugin/agents/coherence.md                         46/281   46/281    0 (firewall, not modified)
+
+Totals (touched files)                            621/5036  619/4718  -318 words (-6.3%)
+
+Method: word counts via `wc -w`. Word count is used as the token proxy because both
+SKILL.md and loop.md use one-paragraph-per-line markdown, so line counts understate
+the actual reduction. Touched files are the three high-traffic prompts loaded on
+every meta-agent step and every variant dispatch.
+
+Files preserved verbatim:
+  plugin/agents/coherence.md            (firewall invariant)
+  plugin/skills/run/templates/prompts/task.md  (already minimal at 3 lines)
+
+Load-bearing content preserved (no semantic loss):
+  - All gen-1-a additions (Promotion Scope, Collision Policy, Discovery at Gen 0)
+  - User and project manifest schemas
+  - All JSONL field shapes (scores, complexity, branches, coherence-log, venture, manifests)
+  - Voyager (Wang 2023), Reflexion (Shinn 2023), ExpeL (Zhao 2024), TurkoMatic (2011) citations
+  - All numbered loop steps
+  - All stopping conditions
+  - Coherence firewall description and rules
