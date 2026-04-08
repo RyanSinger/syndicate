@@ -45,6 +45,7 @@ After scoring, perform the **criteria ratchet** (step 5 below). Document ratchet
 
 1. **Diagnose.** What's weakest in the last attempt? Are the criteria still measuring the right things?
 2. **Propose changes.** Exploration: 2+ variants, each a meaningfully different approach. Convergence: 1 to N based on confidence. State what each change is expected to improve and why.
+   Each variant declares one mutation operator from {rewrite, constrain, decompose, invert, borrow}. Same-operator collisions in one generation do not count as diversity. See `references/loop.md` "Mutation Operators".
 3. **Attempt all in parallel.** Each variant gets its own task agent in a separate worktree (`isolation: "worktree"`), running simultaneously as a background agent. Each writes to its own output directory (`attempts/gen-N-a/`, `gen-N-b/`, ...).
 4. **Score all.** Evaluate every variant honestly. Append the winner to `scores.jsonl` (with `phase` and `ratchet`). Append all variants to `branches.jsonl`.
 5. **Ratchet (exploration only).** Do exactly one of: (a) add a criterion the best variant doesn't already satisfy at 5, (b) split a vague criterion into sharper ones, (c) raise the bar on an existing criterion. You may also prune criteria that stopped making sense; pruning does not substitute for the ratchet. Document in meta-notes.

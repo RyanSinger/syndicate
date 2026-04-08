@@ -115,6 +115,18 @@ If the response is not valid JSON, treat it as `flag` with reason "coherence age
 
 For flag handling, see SKILL.md step 6.
 
+## Mutation Operators
+
+Each variant declares one of these operators (recorded as `operator` on its `branches.jsonl` line). A fixed taxonomy outperforms ad-hoc edits in evolutionary prompt search (PromptBreeder, Fernando et al. 2023, arXiv:2309.16797; EvoPrompt, Guo et al. 2023, arXiv:2309.08532).
+
+- **rewrite**: restate an existing instruction/section differently without changing scope.
+- **constrain**: add a rule, cap, or guard that narrows allowable behavior.
+- **decompose**: split one step, criterion, or artifact into finer-grained parts.
+- **invert**: flip the default (opt-in to opt-out, allow-list to deny-list, or swap the primary case).
+- **borrow**: import a technique from a cited external source or a prior generation's pruned branch.
+
+Two same-operator variants in one generation do not satisfy the "genuinely different" exploration requirement. Pairwise is available as a tie-breaker; see gen-2-a rationale.
+
 ## Metrics Formats
 
 All metrics files are append-only JSONL in `metrics/`.
@@ -148,8 +160,8 @@ Only the winner's score is appended per generation. All variant scores live in `
 ### archive/branches.jsonl
 
 ```jsonl
-{"generation": 3, "variant": "a", "branch": "gen-3-a", "parent": "gen-2-a", "score": 3.2, "pruned": true, "change": "switched to grid layout"}
-{"generation": 3, "variant": "b", "branch": "gen-3-b", "parent": "gen-2-a", "score": 4.1, "pruned": false, "change": "added responsive breakpoints"}
+{"generation": 3, "variant": "a", "branch": "gen-3-a", "parent": "gen-2-a", "score": 3.2, "pruned": true, "operator": "rewrite", "change": "switched to grid layout"}
+{"generation": 3, "variant": "b", "branch": "gen-3-b", "parent": "gen-2-a", "score": 4.1, "pruned": false, "operator": "constrain", "change": "added responsive breakpoints"}
 ```
 
 One line per variant. `branch` is the logical variant name (e.g., `gen-3-b`), not the ephemeral worktree branch. `parent` references the previous generation's winner. Since squash-merges land on `syndicate/run-<N>`, the parent for all variants in a generation is the tip of that branch. Only the winner has `pruned: false`.
@@ -232,7 +244,7 @@ Append a provenance line to the **user manifest** `~/.claude/syndicate-manifest.
 User manifest line format:
 
 ```jsonl
-{"kind": "agent", "name": "<name>", "path": "~/.claude/agents/<name>.md", "scope": "user", "source_run": "<project-slug>/run-<N>", "source_project": "<project-path>", "promoted_at": "2026-04-08T12:00:00Z", "last_revised": "2026-04-08T12:00:00Z", "description": "<one sentence from agent frontmatter>", "collision": false, "fallback_scope": null, "retired": false}
+{"kind": "agent", "name": "<name>", "path": "~/.claude/agents/<name>.md", "scope": "user", "source_run": "<project-slug>/run-<N>", "source_project": "<project-path>", "promoted_at": "2026-04-08T12:00:00Z", "last_revised": "2026-04-08T12:00:00Z", "description": "<one sentence from agent frontmatter>", "collision": false, "fallback_scope": null, "retired": false, "uses_count": 0, "score_deltas": [], "avg_score_delta": null, "last_used": null, "flagged": false}
 ```
 
 Project registry line (unchanged, for project fallback only):
@@ -262,6 +274,14 @@ Procedure:
 3. Write `syndicate/discovered.jsonl` (one line per candidate): name, kind, path, description. Per-run ephemeral metadata.
 4. The meta-agent keeps the index in working context so Diagnose and Propose Changes can reference candidates by name and description.
 5. Load full artifact contents **only when** a candidate's trigger conditions match the situation at generation time (same gating as learned-agent invocation). This bounds per-generation token load even as the user library grows.
+
+### Ranking Formula
+
+As the user library grows, description-only ranking degrades: Voyager (Wang et al. 2023, arXiv:2305.16291) shows a persistent skill library drives lifelong performance but retrieval quality matters; the lifelong-LLM-agents roadmap (Zheng et al. 2025, arXiv:2501.07278) names wake-sleep curation as the missing primitive. Rank discovered candidates by:
+
+    rank = 0.5 * desc_match + 0.2 * use_signal + 0.3 * quality
+
+Where `desc_match` is goal-keyword overlap with the entry's description (lowercased, stop-words removed; 0 to 1), `use_signal` is `min(uses_count / 5, 1)`, and `quality` is `clip(0.5 + avg_score_delta / 2, 0, 1)`. Cold-start fallback: unproven entries (`uses_count == 0`) use `quality = 0.5` and `use_signal = 0`, so they compete on description alone. Load the top 10 candidates into working context. Skip entries where `flagged: true`. After `uses_count >= 3`, if `avg_score_delta <= 0`, set `flagged: true` (reversible on a later positive event). Usage recording is finalized when first user-level promotion runs live.
 
 Claude Code's own discovery (user-level skills and agents under `~/.claude/` are automatically available across projects, with user level taking precedence on name collision) means user-level installs are loadable without any path manipulation from the syndicate. The manifest exists so the syndicate itself can reason about provenance, lifecycle, and collisions.
 
