@@ -158,9 +158,9 @@ One line per variant. `branch` is the logical variant name (e.g., `gen-3-b`), no
 
 ### Bootstrap
 
-Detect the PR target branch (`git symbolic-ref refs/remotes/origin/HEAD`, fall back to `main`; `none` if no remote). Write to `syndicate/.pr-target`.
+Detect the PR target branch. If the repo has no remote, write `none`. Otherwise run `git symbolic-ref refs/remotes/origin/HEAD` and, on any non-zero exit (no origin HEAD ref set, shallow clone, etc.), fall back to `main`. Write the result to `syndicate/.pr-target`.
 
-Create `syndicate/run-<N>` off HEAD (N increments past prior runs). Commit the initial `syndicate/` directory. Tag it `syndicate-seed-<N>` (local only, not pushed).
+Create `syndicate/run-<N>` off HEAD (N increments past prior runs). Commit the initial `syndicate/` directory. Tag it locally with `git -c tag.gpgSign=false tag -a syndicate-seed-<N> -m "syndicate seed <N>"`. The explicit `-a` and `-c tag.gpgSign=false` are required: users commonly have `tag.gpgSign=true` or `tag.forceSignAnnotated=true` globally, which causes plain `git tag <name>` to fail with `fatal: no tag message?`. Do not push the tag.
 
 ### Generation Branches
 
@@ -257,7 +257,7 @@ Every fresh syndicate run does one discovery pass at bootstrap, before writing `
 
 Procedure:
 
-1. Read `~/.claude/syndicate-manifest.jsonl` if it exists. Skip entries where `retired: true`.
+1. Read `~/.claude/syndicate-manifest.jsonl` if it exists. Skip entries where `retired: true`. If the file is missing (first-ever syndicate run on this machine), write an empty `syndicate/discovered.jsonl` and skip the rest of this procedure.
 2. For each non-retired entry, read the `description` field and, if useful, the artifact's frontmatter. Do **not** inline full contents.
 3. Write `syndicate/discovered.jsonl` (one line per candidate): name, kind, path, description. Per-run ephemeral metadata.
 4. The meta-agent keeps the index in working context so Diagnose and Propose Changes can reference candidates by name and description.

@@ -14,11 +14,11 @@ A structurally separate coherence agent watches the trajectory and shuts things 
 If `syndicate/` doesn't exist in the project root, bootstrap it:
 
 1. Copy `templates/` to `syndicate/` in the project root.
-2. Detect the PR target branch (`git symbolic-ref refs/remotes/origin/HEAD`, fall back to `main`; `none` if no remote). Write to `syndicate/.pr-target`.
+2. Detect the PR target branch: if no remote, write `none`; else try `git symbolic-ref refs/remotes/origin/HEAD` and on any failure fall back to `main`. Write to `syndicate/.pr-target`.
 3. Create `syndicate/run-<N>` off HEAD (N increments past prior runs).
-4. Run the discovery pass (see `references/loop.md` "Discovery at Gen 0") to index user-level agents and skills into `syndicate/discovered.jsonl`.
+4. Run the discovery pass (see `references/loop.md` "Discovery at Gen 0") to index user-level agents and skills into `syndicate/discovered.jsonl`. If `~/.claude/syndicate-manifest.jsonl` does not exist, write an empty `discovered.jsonl` and continue.
 5. Commit `syndicate/` on that branch.
-6. Tag it `syndicate-seed-<N>` (local only).
+6. Tag it locally as an annotated tag, overriding any user signing config: `git -c tag.gpgSign=false tag -a syndicate-seed-<N> -m "syndicate seed <N>"`. Do not push.
 
 If `syndicate/` exists, you are resuming. Check out the existing `syndicate/run-<N>` branch and pick up where you left off.
 
@@ -100,7 +100,7 @@ Start the task agent on **opus**. Downgrade to **sonnet** if evidence shows the 
 
 ## Stopping Conditions
 
-- **Converged:** average score 4.8+ for 2+ consecutive generations, in convergence phase. Cannot trigger during exploration.
+- **Converged:** in convergence phase, and either (a) average score 4.8+ for 2+ consecutive generations, or (b) average score 4.5+ and improvement delta under 0.1 for 3+ consecutive generations. Clause (b) is a stagnation-on-good-quality signal, standard in evolutionary algorithms (stop when best fitness has not improved by more than epsilon over T generations). It also hedges against LLM-as-judge pointwise scoring drift, which fluctuates by several points even on top models and can prevent a genuinely-converged run from crossing an absolute threshold. Cannot trigger during exploration.
 - **All branches pruned:** no viable parents. Report best result. Either phase.
 - **Sustained plateau:** flagged 3+ consecutive times. Either phase. During exploration, variants aren't producing useful diversity. During convergence, refinement has stalled.
 

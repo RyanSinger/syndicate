@@ -1,0 +1,8 @@
+ .gitignore                                   |   1 +
+ plugin/skills/run/SKILL.md                   |   8 +-
+ plugin/skills/run/references/loop.md         |   6 +-
+ syndicate/attempts/gen-3-b/checklist.md      |  40 +++++++
+ syndicate/attempts/gen-3-b/rationale.md      |  82 +++++++++++++
+ syndicate/attempts/gen-3-b/summary.md        |  40 +++++++
+ syndicate/attempts/gen-3-b/validation-log.md | 171 +++++++++++++++++++++++++++
+ 7 files changed, 341 insertions(+), 7 deletions(-)
