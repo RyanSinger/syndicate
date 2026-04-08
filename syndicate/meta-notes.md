@@ -54,3 +54,38 @@ Three parallel variants on top of gen-1-a baseline, each tackling a different no
 - Named mutation operator taxonomy (2-a) — could promote to a domain skill once proven
 - Empirical discovery ranking formula (2-b) — implement before first user-level promotion goes live
 - Auto-flag rule for stale artifacts (2-b) — same timing
+
+## Generation 3 (final exploration)
+
+Three parallel variants. First dispatch of all three hit the worktree isolation bug: each worktree forked from `main` instead of `syndicate/run-1`. Filed as anthropics/claude-code#45371 and baked a `baseline-sync` workaround into loop.md Task Agent section. Re-dispatched all three with mandatory first-step sync.
+
+- **3-a** Integrate pruned winners (mutation operators + empirical discovery ranking): 4.67. Pruned. Surgical, but 3-b outscored.
+- **3-b** Live dry-run validation + convergence threshold tuning: **4.83. Winner.**
+- **3-c** New frontier (ratchet integrity audit + MAST taxonomy + position-bias scoring): 4.33. Pruned. Added +121 words to SKILL.md, partially undoing gen-2-c's tightening; three new mechanisms at once was too ambitious.
+
+**Why 3-b won.** Only variant that empirically proved the plugin works. Ran the bootstrap procedure twice in disposable scratch projects and found THREE real bugs, including the `git tag` gpgSign failure that bit this very session when I bootstrapped `syndicate/run-1` at the start (had to work around with -m flag). Plus tuned the convergence threshold with citations. Empirical validation >> speculative machinery.
+
+**Transition rationale.** Three exploration generations have surfaced a clear direction and a stable bank of pruned-but-valuable ideas. Gen 1 established promotion plumbing. Gen 2 tightened prose. Gen 3 empirically validated the plugin and fixed real bootstrap bugs. Further exploration would spread surface area and increase token cost. Convergence focus: disciplined integration of best bank ideas.
+
+## Generation 4 (first convergence)
+
+Single variant, applied directly by the meta-agent (no subagent): integrated gen-3-a's mutation operator taxonomy and empirical discovery ranking formula as a known-good narrow delta from the reachable (but deleted) branch. +1 line SKILL.md, +23 loop.md. All grounding preserved (PromptBreeder, EvoPrompt, Voyager, Zheng 2025). Score: 5.0. Coherence: continue.
+
+## Generation 5 (flagged, reverted)
+
+Attempted to add a trimmed version of gen-3-c's reward-hacking audit to the ratchet step in SKILL.md. Coherence flagged: token complexity jumped 131 words vs gen-4 while score dropped from 5.0 to 4.83. Respected the flag and reverted. The principle "never soften criteria to inflate scores" was already in the Principles section anyway; restating it in step 5 was redundant. Plateau counter: 1.
+
+## Generation 6 (consolidation)
+
+No new plugin edits. Sanity-checked all landmarks (Promotion Scope, Collision Policy, Discovery at Gen 0, Mutation Operators, Ranking Formula = 5 grep matches), verified coherence firewall (0 lines changed to agents/coherence.md since main), confirmed gen-3-b bug fixes present. Distilled meta-notes with this round's learnings. Score: 5.0 (gen-4 state preserved, no regressions). Plateau counter reset by continue.
+
+**Convergence stop:** gens 4 and 6 both at 5.0 in convergence phase, with gen-5 flagged and cleanly reverted between them. Two effective convergence gens at 4.8+, stop condition met. Ready to dissolve.
+
+## Key meta-learnings from this run
+
+1. **Empirical validation > speculative mechanisms.** Gen 3-b found real bugs the prior research-heavy variants missed. When uncertain, run the thing.
+2. **Token discipline compounds.** Gen 2-c's editorial pass is one of the most valuable single changes because it runs every generation forever. Cost-free improvements at the right level are gold.
+3. **Coherence firewall works.** Gen 5 was correctly flagged when a small feature added disproportionate bulk. Revert-and-ship is a legitimate resolution.
+4. **Worktree isolation bug is universal and requires baseline-sync workaround.** Now documented in loop.md and filed upstream.
+5. **Don't front-load machinery.** Gen 1-b and Gen 2-a were strong research-grounded ideas that lost to narrower, disciplined variants because their scoping exceeded the current need. Ideas go to the bank; integrate when the cost/benefit flips.
+6. **Match variant scope to exploration phase.** Gen 1 went wide (narrow/broad/architectural), Gen 2 picked different weaknesses (scoring/capital/tokens), Gen 3 tried orthogonal strategies (integrate/validate/novel). Diversity of approach is what the coherence agent is actually checking.
