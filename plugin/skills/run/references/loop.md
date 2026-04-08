@@ -31,6 +31,16 @@ Agent tool:
 
 Dispatch all variants simultaneously. After they complete, check out each variant's branch to read its output for scoring.
 
+**Worktree baseline-sync (mandatory).** Due to anthropics/claude-code#45371, `isolation: "worktree"` currently forks from the default branch instead of the caller's current HEAD, so the task agent will not see prior generations' winners. Every task-agent prompt MUST include these mandatory first steps:
+
+1. `git log --oneline -5` (you will see the default branch's tip, not `syndicate/run-<N>`)
+2. `git checkout syndicate/run-<N> -- plugin/ syndicate/` (pulls baseline files from shared object store)
+3. `git commit -m "baseline-sync: pull syndicate/run-<N> into worktree"`
+4. Verify gen landmarks with grep before starting work; abort to `attempts/gen-<N>-<V>/BASE_ERROR.md` if missing
+5. All variant edits sit ON TOP of the baseline-sync commit
+
+The meta-agent extracts each variant's incremental work with `git diff baseline-sync HEAD -- plugin/ syndicate/attempts/gen-<N>-<V>/` and applies that delta (not the whole branch) to `syndicate/run-<N>`. Remove this workaround when the upstream bug is fixed.
+
 ### Learned Agents
 
 Learned agents are specialized subagents promoted from recurring patterns. They live at user level (`~/.claude/agents/<name>.md`) by default so any future syndicate run in any project can discover and reuse them. Project-scoped agents (rare, project-specific) live in `syndicate/learned-agents/<name>.md`. See "Promoting Learnings" below.
