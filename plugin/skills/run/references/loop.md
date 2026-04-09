@@ -334,6 +334,8 @@ Check `syndicate/discovered.jsonl` for `"origin": "installed-plugin"` entries ma
 
 Once imported, a skill belongs to this syndicate. Edit it freely. When you modify an imported skill, set `diverged: true` and update `last_revised` in `skills-manifest.jsonl`. There is no upstream sync. Provenance metadata exists so you can check the source later, not for automatic updates.
 
+When an improvement could benefit the original installed skill, note it in meta-notes with the tag `upstream-recommendation:` followed by the skill name and what changed. These surface in round and dissolution reports.
+
 ### Promoting Imported Skills to Agents
 
 Imported skills follow the same promotion path as locally-grown skills. When a skill is being used procedurally (takes input, produces output, runs independently), promote it to a learned agent via the standard procedure. Optionally retire the domain skill in `skills-manifest.jsonl` if the agent fully subsumes it. If the skill still has knowledge value beyond the procedure, keep both.
