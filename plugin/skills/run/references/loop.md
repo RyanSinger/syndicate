@@ -164,13 +164,11 @@ Only the winner's score is appended per generation. All variant scores live in `
 ### archive/branches.jsonl
 
 ```jsonl
-{"generation": 3, "variant": "a", "branch": "gen-3-a", "parent": "gen-2-a", "score": 3.2, "pruned": true, "combined": false, "operator": "rewrite", "change": "switched to grid layout"}
-{"generation": 3, "variant": "b", "branch": "gen-3-b", "parent": "gen-2-a", "score": 4.1, "pruned": false, "combined": false, "operator": "constrain", "change": "added responsive breakpoints"}
+{"generation": 3, "variant": "a", "branch": "gen-3-a", "parent": "gen-2-a", "score": 3.2, "pruned": true, "operator": "rewrite", "change": "switched to grid layout"}
+{"generation": 3, "variant": "b", "branch": "gen-3-b", "parent": "gen-2-a", "score": 4.1, "pruned": false, "operator": "constrain", "change": "added responsive breakpoints"}
 ```
 
 One line per variant. `branch` is the logical variant name (e.g., `gen-3-b`), not the ephemeral worktree branch. `parent` references the previous generation's winner. Since squash-merges land on `syndicate/run-<N>`, the parent for all variants in a generation is the tip of that branch. Only the winner has `pruned: false`.
-
-When variants are combined (see SKILL.md step 7), all contributing variants have `"pruned": false, "combined": true`. Non-contributing variants in the same generation are still `"pruned": true, "combined": false`.
 
 ## Git Workflow
 
