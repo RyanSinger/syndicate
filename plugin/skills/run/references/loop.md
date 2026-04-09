@@ -17,29 +17,33 @@ Agent tool:
   isolation: "worktree"
   run_in_background: true
   prompt: |
-    <contents of prompts/task.md>
-
-    Skills:
-    <concatenated contents of all files in skills/*.md and skills/domain/*.md>
+    <contents of prompts/task.md, with {{SKILLS_BLOCK}} replaced (see below)>
 
     Goal:
     <contents of goal.md>
 
+    Criteria:
+    <contents of criteria.md>
+
     Output directory: syndicate/attempts/gen-<N>-<V>/
     Put all output files in the output directory above. Create it if needed.
+
+Replace `{{SKILLS_BLOCK}}` in the prompt with two sections:
+
+1. **Syndicate skills (inlined):** concatenate all files in `skills/*.md` and `skills/domain/*.md` as full content. These are always included.
+2. **Installed plugin skills (listed):** for each installed-plugin entry in `discovered.jsonl` whose description matches the current generation's focus, include one line: `- <name>: <description>`. These are invoked via the Skill tool at runtime; do not inline their full content. Not every installed skill appears every generation. Select based on relevance to the current Diagnose output.
 ```
 
 Dispatch all variants simultaneously. After they complete, check out each variant's branch to read its output for scoring.
 
-**Worktree baseline-sync (mandatory).** Due to anthropics/claude-code#45371, `isolation: "worktree"` currently forks from the default branch instead of the caller's current HEAD, so the task agent will not see prior generations' winners. Every task-agent prompt MUST include these mandatory first steps:
+**Worktree baseline-sync (mandatory).** Due to anthropics/claude-code#45371, `isolation: "worktree"` currently forks from the default branch instead of the caller's current HEAD, so the task agent will not see prior generations' winners. Every task-agent prompt MUST include this instruction:
 
-1. `git log --oneline -5` (you will see the default branch's tip, not `syndicate/run-<N>`)
-2. `git checkout syndicate/run-<N> -- plugin/ syndicate/` (pulls baseline files from shared object store)
-3. `git commit -m "baseline-sync: pull syndicate/run-<N> into worktree"`
-4. Verify gen landmarks with grep before starting work; abort to `attempts/gen-<N>-<V>/BASE_ERROR.md` if missing
-5. All variant edits sit ON TOP of the baseline-sync commit
+> Before starting work, run: `bash syndicate/baseline-sync.sh syndicate/run-<N>`
+> If it fails, write `BASE_ERROR.md` to your output directory explaining the error and stop.
 
-The meta-agent extracts each variant's incremental work with `git diff baseline-sync HEAD -- plugin/ syndicate/attempts/gen-<N>-<V>/` and applies that delta (not the whole branch) to `syndicate/run-<N>`. Remove this workaround when the upstream bug is fixed.
+The script checks out all files from the run branch, commits the sync, and verifies `syndicate/` landed. All variant edits sit on top of the baseline-sync commit.
+
+The meta-agent extracts each variant's incremental work with `git diff baseline-sync HEAD` and applies that delta (not the whole branch) to `syndicate/run-<N>`. Remove this workaround (script + prompt instruction) when anthropics/claude-code#45371 is fixed.
 
 ### Learned Agents
 
@@ -160,11 +164,13 @@ Only the winner's score is appended per generation. All variant scores live in `
 ### archive/branches.jsonl
 
 ```jsonl
-{"generation": 3, "variant": "a", "branch": "gen-3-a", "parent": "gen-2-a", "score": 3.2, "pruned": true, "operator": "rewrite", "change": "switched to grid layout"}
-{"generation": 3, "variant": "b", "branch": "gen-3-b", "parent": "gen-2-a", "score": 4.1, "pruned": false, "operator": "constrain", "change": "added responsive breakpoints"}
+{"generation": 3, "variant": "a", "branch": "gen-3-a", "parent": "gen-2-a", "score": 3.2, "pruned": true, "combined": false, "operator": "rewrite", "change": "switched to grid layout"}
+{"generation": 3, "variant": "b", "branch": "gen-3-b", "parent": "gen-2-a", "score": 4.1, "pruned": false, "combined": false, "operator": "constrain", "change": "added responsive breakpoints"}
 ```
 
 One line per variant. `branch` is the logical variant name (e.g., `gen-3-b`), not the ephemeral worktree branch. `parent` references the previous generation's winner. Since squash-merges land on `syndicate/run-<N>`, the parent for all variants in a generation is the tip of that branch. Only the winner has `pruned: false`.
+
+When variants are combined (see SKILL.md step 7), all contributing variants have `"pruned": false, "combined": true`. Non-contributing variants in the same generation are still `"pruned": true, "combined": false`.
 
 ## Git Workflow
 
@@ -269,11 +275,16 @@ Every fresh syndicate run does one discovery pass at bootstrap, before writing `
 
 Procedure:
 
-1. Read `~/.claude/syndicate-manifest.jsonl` if it exists. Skip entries where `retired: true`. If the file is missing (first-ever syndicate run on this machine), write an empty `syndicate/discovered.jsonl` and skip the rest of this procedure.
-2. For each non-retired entry, read the `description` field and, if useful, the artifact's frontmatter. Do **not** inline full contents.
-3. Write `syndicate/discovered.jsonl` (one line per candidate): name, kind, path, description. Per-run ephemeral metadata.
-4. The meta-agent keeps the index in working context so Diagnose and Propose Changes can reference candidates by name and description.
-5. Load full artifact contents **only when** a candidate's trigger conditions match the situation at generation time (same gating as learned-agent invocation). This bounds per-generation token load even as the user library grows.
+1. Read `~/.claude/syndicate-manifest.jsonl` if it exists. Skip entries where `retired: true`. If the file is missing (first-ever syndicate run on this machine), skip this source.
+2. For each non-retired manifest entry, read the `description` field and, if useful, the artifact's frontmatter. Do **not** inline full contents. Write to `syndicate/discovered.jsonl` with `"origin": "syndicate"`: name, kind, path, description.
+3. Scan the system reminder's available skills list. For each installed plugin skill, write to `syndicate/discovered.jsonl` with `"origin": "installed-plugin"`, `"kind": "skill"`, name, and description:
+   ```jsonl
+   {"name": "superpowers:test-driven-development", "kind": "skill", "origin": "installed-plugin", "description": "Use when implementing any feature or bugfix..."}
+   ```
+4. If neither source yielded entries, write an empty `syndicate/discovered.jsonl`.
+5. The meta-agent keeps the index in working context so Diagnose and Propose Changes can reference candidates by name and description.
+6. For syndicate-origin entries: load full artifact contents **only when** a candidate's trigger conditions match the situation at generation time (same gating as learned-agent invocation). This bounds per-generation token load even as the user library grows.
+7. For installed-plugin entries: include name + description in the task agent prompt when relevant. The task agent invokes them via the Skill tool at runtime.
 
 ### Ranking Formula
 
@@ -282,6 +293,8 @@ As the user library grows, description-only ranking degrades: Voyager (Wang et a
     rank = 0.5 * desc_match + 0.2 * use_signal + 0.3 * quality
 
 Where `desc_match` is goal-keyword overlap with the entry's description (lowercased, stop-words removed; 0 to 1), `use_signal` is `min(uses_count / 5, 1)`, and `quality` is `clip(0.5 + avg_score_delta / 2, 0, 1)`. Cold-start fallback: unproven entries (`uses_count == 0`) use `quality = 0.5` and `use_signal = 0`, so they compete on description alone. Load the top 10 candidates into working context. Skip entries where `flagged: true`. After `uses_count >= 3`, if `avg_score_delta <= 0`, set `flagged: true` (reversible on a later positive event). Usage recording is finalized when first user-level promotion runs live.
+
+This ranking formula applies to `"origin": "syndicate"` entries only. Installed-plugin entries (`"origin": "installed-plugin"`) have no usage stats in the manifest; rank them by `desc_match` alone.
 
 Claude Code's own discovery (user-level skills and agents under `~/.claude/` are automatically available across projects, with user level taking precedence on name collision) means user-level installs are loadable without any path manipulation from the syndicate. The manifest exists so the syndicate itself can reason about provenance, lifecycle, and collisions.
 
@@ -293,7 +306,7 @@ Domain skills can come from installed Claude Code plugins, not just local promot
 
 ### Finding Skills
 
-Browse `~/.claude/plugins/` for installed plugins. Look in each plugin's `skills/` directory for skill files matching the syndicate's current needs.
+Check `syndicate/discovered.jsonl` for `"origin": "installed-plugin"` entries matching the current need. Use the Skill tool to load the full content of the matching skill. Fall back to browsing `~/.claude/plugins/` only if `discovered.jsonl` is empty or stale.
 
 ### Import Procedure
 
@@ -320,6 +333,8 @@ Browse `~/.claude/plugins/` for installed plugins. Look in each plugin's `skills
 ### Evolving Imported Skills
 
 Once imported, a skill belongs to this syndicate. Edit it freely. When you modify an imported skill, set `diverged: true` and update `last_revised` in `skills-manifest.jsonl`. There is no upstream sync. Provenance metadata exists so you can check the source later, not for automatic updates.
+
+When an improvement could benefit the original installed skill, note it in meta-notes with the tag `upstream-recommendation:` followed by the skill name and what changed. These surface in round and dissolution reports.
 
 ### Promoting Imported Skills to Agents
 
@@ -425,6 +440,9 @@ Written after the discovery phase (step 9), before resuming the evolution loop. 
 
 ## Next Round Focus
 <What discovery identified as the highest-value improvement, and why. What was considered and rejected.>
+
+## Upstream Recommendations (optional)
+<Include only if the syndicate has `upstream-recommendation:` entries in meta-notes. For each: skill name, what was changed, why it helps.>
 ```
 
 In interactive sessions, also present the report directly to the user.
@@ -450,6 +468,9 @@ Written whenever the syndicate dissolves, regardless of mode or stopping conditi
 
 ## Deliverable
 <Path to the best attempt in the project root.>
+
+## Upstream Recommendations (optional)
+<Include only if the syndicate has `upstream-recommendation:` entries in meta-notes. For each: skill name, what was changed, why it helps.>
 ```
 
 ### Dissolution Trigger Points

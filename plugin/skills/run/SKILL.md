@@ -13,10 +13,13 @@ A structurally separate coherence agent watches the trajectory and shuts things 
 
 If `syndicate/` doesn't exist in the project root, bootstrap it:
 
-1. Copy `templates/` to `syndicate/` in the project root.
+1. Copy `templates/` to `syndicate/` in the project root. Ensure `syndicate/baseline-sync.sh` is executable (`chmod +x`).
 2. Detect the PR target branch: if no remote, write `none`; else try `git symbolic-ref refs/remotes/origin/HEAD` and on any failure fall back to `main`. Write to `syndicate/.pr-target`.
 3. Create `syndicate/run-<N>` off HEAD (N increments past prior runs).
-4. Run the discovery pass (see `references/loop.md` "Discovery at Gen 0") to index user-level agents and skills into `syndicate/discovered.jsonl`. If `~/.claude/syndicate-manifest.jsonl` does not exist, write an empty `discovered.jsonl` and continue.
+4. Run the discovery pass (see `references/loop.md` "Discovery at Gen 0") to index agents and skills into `syndicate/discovered.jsonl`:
+   - Read `~/.claude/syndicate-manifest.jsonl` for syndicate-promoted artifacts (`"origin": "syndicate"`). If the file does not exist (first-ever run on this machine), skip this source.
+   - Scan the system reminder's skill list for installed plugin skills. Write each with `"origin": "installed-plugin"`, `"kind": "skill"`, name, and description.
+   - If neither source yields entries, write an empty `discovered.jsonl` and continue.
 5. Commit `syndicate/` on that branch.
 6. Tag it locally as an annotated tag, overriding any user signing config: `git -c tag.gpgSign=false tag -a syndicate-seed-<N> -m "syndicate seed <N>"`. Do not push.
 
@@ -50,7 +53,10 @@ After scoring, perform the **criteria ratchet** (step 5 below). Document ratchet
 4. **Score all.** Evaluate every variant honestly. Append the winner to `scores.jsonl` (with `phase` and `ratchet`). Append all variants to `branches.jsonl`.
 5. **Ratchet (exploration only).** Do exactly one of: (a) add a criterion the best variant doesn't already satisfy at 5, (b) split a vague criterion into sharper ones, (c) raise the bar on an existing criterion. You may also prune criteria that stopped making sense; pruning does not substitute for the ratchet. Document in meta-notes.
 6. **Coherence check on batch.** A separate agent reviews the full batch: variant scores, spread, complexity growth, provisional winner's diff stats, plus current phase and ratchet action. It returns: continue, flag, or prune. On `flag`, change your approach; each `flag` increments the plateau counter. `continue` and `prune` reset it. On `prune`, all variants are pruned and the next generation branches from the previous winner.
-7. **Squash-merge best, clean up rest.** Squash the winner onto `syndicate/run-<N>` as a single commit: `gen-<G>: <one sentence>`. Mark others pruned in `branches.jsonl`. Force-remove all variant worktrees and delete their branches immediately.
+7. **Merge best, clean up rest.** After scoring, evaluate whether variants have complementary strengths:
+   - **Single winner (default):** One variant dominates across criteria. Squash-merge onto `syndicate/run-<N>` as `gen-<G>: <one sentence>`. Mark others pruned in `branches.jsonl`.
+   - **Combine:** Variants excel on different criteria and their file changes don't overlap. Check file-level overlap: run `git diff --name-only` for each variant relative to baseline. If any file appears in more than one variant's diff, fall back to single winner. Otherwise, apply each variant's changes via `git checkout <variant-branch> -- <files>` and commit as `gen-<G>: combined (<variants>): <one sentence>`. Mark contributing variants with `"pruned": false, "combined": true` in `branches.jsonl`. Score the combined result for `scores.jsonl`. Document in meta-notes which variants were combined and which specific criteria each addressed; vague rationale like "both had good parts" is not sufficient.
+   Force-remove all variant worktrees and delete their branches immediately after merging.
 8. **Record what you learned.** Update `meta-notes.md`: what was tried in parallel, what worked, what didn't. If a pattern recurs and is reusable, promote it to a learned agent or domain skill. Distill meta-notes when they get long.
 9. **Check phase transition (exploration only).** After 3+ exploration generations, evaluate transition eligibility (see Phase Transition). If not ready, continue.
 
