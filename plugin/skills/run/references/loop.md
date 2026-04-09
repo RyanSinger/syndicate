@@ -17,29 +17,33 @@ Agent tool:
   isolation: "worktree"
   run_in_background: true
   prompt: |
-    <contents of prompts/task.md>
-
-    Skills:
-    <concatenated contents of all files in skills/*.md and skills/domain/*.md>
+    <contents of prompts/task.md, with {{SKILLS_BLOCK}} replaced (see below)>
 
     Goal:
     <contents of goal.md>
 
+    Criteria:
+    <contents of criteria.md>
+
     Output directory: syndicate/attempts/gen-<N>-<V>/
     Put all output files in the output directory above. Create it if needed.
+
+Replace `{{SKILLS_BLOCK}}` in the prompt with two sections:
+
+1. **Syndicate skills (inlined):** concatenate all files in `skills/*.md` and `skills/domain/*.md` as full content. These are always included.
+2. **Installed plugin skills (listed):** for each installed-plugin entry in `discovered.jsonl` whose description matches the current generation's focus, include one line: `- <name>: <description>`. These are invoked via the Skill tool at runtime; do not inline their full content. Not every installed skill appears every generation. Select based on relevance to the current Diagnose output.
 ```
 
 Dispatch all variants simultaneously. After they complete, check out each variant's branch to read its output for scoring.
 
-**Worktree baseline-sync (mandatory).** Due to anthropics/claude-code#45371, `isolation: "worktree"` currently forks from the default branch instead of the caller's current HEAD, so the task agent will not see prior generations' winners. Every task-agent prompt MUST include these mandatory first steps:
+**Worktree baseline-sync (mandatory).** Due to anthropics/claude-code#45371, `isolation: "worktree"` currently forks from the default branch instead of the caller's current HEAD, so the task agent will not see prior generations' winners. Every task-agent prompt MUST include this instruction:
 
-1. `git log --oneline -5` (you will see the default branch's tip, not `syndicate/run-<N>`)
-2. `git checkout syndicate/run-<N> -- plugin/ syndicate/` (pulls baseline files from shared object store)
-3. `git commit -m "baseline-sync: pull syndicate/run-<N> into worktree"`
-4. Verify gen landmarks with grep before starting work; abort to `attempts/gen-<N>-<V>/BASE_ERROR.md` if missing
-5. All variant edits sit ON TOP of the baseline-sync commit
+> Before starting work, run: `bash syndicate/baseline-sync.sh syndicate/run-<N>`
+> If it fails, write `BASE_ERROR.md` to your output directory explaining the error and stop.
 
-The meta-agent extracts each variant's incremental work with `git diff baseline-sync HEAD -- plugin/ syndicate/attempts/gen-<N>-<V>/` and applies that delta (not the whole branch) to `syndicate/run-<N>`. Remove this workaround when the upstream bug is fixed.
+The script checks out all files from the run branch, commits the sync, and verifies `syndicate/` landed. All variant edits sit on top of the baseline-sync commit.
+
+The meta-agent extracts each variant's incremental work with `git diff baseline-sync HEAD` and applies that delta (not the whole branch) to `syndicate/run-<N>`. Remove this workaround (script + prompt instruction) when anthropics/claude-code#45371 is fixed.
 
 ### Learned Agents
 
