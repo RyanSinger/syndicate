@@ -273,11 +273,16 @@ Every fresh syndicate run does one discovery pass at bootstrap, before writing `
 
 Procedure:
 
-1. Read `~/.claude/syndicate-manifest.jsonl` if it exists. Skip entries where `retired: true`. If the file is missing (first-ever syndicate run on this machine), write an empty `syndicate/discovered.jsonl` and skip the rest of this procedure.
-2. For each non-retired entry, read the `description` field and, if useful, the artifact's frontmatter. Do **not** inline full contents.
-3. Write `syndicate/discovered.jsonl` (one line per candidate): name, kind, path, description. Per-run ephemeral metadata.
-4. The meta-agent keeps the index in working context so Diagnose and Propose Changes can reference candidates by name and description.
-5. Load full artifact contents **only when** a candidate's trigger conditions match the situation at generation time (same gating as learned-agent invocation). This bounds per-generation token load even as the user library grows.
+1. Read `~/.claude/syndicate-manifest.jsonl` if it exists. Skip entries where `retired: true`. If the file is missing (first-ever syndicate run on this machine), skip this source.
+2. For each non-retired manifest entry, read the `description` field and, if useful, the artifact's frontmatter. Do **not** inline full contents. Write to `syndicate/discovered.jsonl` with `"origin": "syndicate"`: name, kind, path, description.
+3. Scan the system reminder's available skills list. For each installed plugin skill, write to `syndicate/discovered.jsonl` with `"origin": "installed-plugin"`, `"kind": "skill"`, name, and description:
+   ```jsonl
+   {"name": "superpowers:test-driven-development", "kind": "skill", "origin": "installed-plugin", "description": "Use when implementing any feature or bugfix..."}
+   ```
+4. If neither source yielded entries, write an empty `syndicate/discovered.jsonl`.
+5. The meta-agent keeps the index in working context so Diagnose and Propose Changes can reference candidates by name and description.
+6. For syndicate-origin entries: load full artifact contents **only when** a candidate's trigger conditions match the situation at generation time (same gating as learned-agent invocation). This bounds per-generation token load even as the user library grows.
+7. For installed-plugin entries: include name + description in the task agent prompt when relevant. The task agent invokes them via the Skill tool at runtime.
 
 ### Ranking Formula
 
@@ -286,6 +291,8 @@ As the user library grows, description-only ranking degrades: Voyager (Wang et a
     rank = 0.5 * desc_match + 0.2 * use_signal + 0.3 * quality
 
 Where `desc_match` is goal-keyword overlap with the entry's description (lowercased, stop-words removed; 0 to 1), `use_signal` is `min(uses_count / 5, 1)`, and `quality` is `clip(0.5 + avg_score_delta / 2, 0, 1)`. Cold-start fallback: unproven entries (`uses_count == 0`) use `quality = 0.5` and `use_signal = 0`, so they compete on description alone. Load the top 10 candidates into working context. Skip entries where `flagged: true`. After `uses_count >= 3`, if `avg_score_delta <= 0`, set `flagged: true` (reversible on a later positive event). Usage recording is finalized when first user-level promotion runs live.
+
+This ranking formula applies to `"origin": "syndicate"` entries only. Installed-plugin entries (`"origin": "installed-plugin"`) have no usage stats in the manifest; rank them by `desc_match` alone.
 
 Claude Code's own discovery (user-level skills and agents under `~/.claude/` are automatically available across projects, with user level taking precedence on name collision) means user-level installs are loadable without any path manipulation from the syndicate. The manifest exists so the syndicate itself can reason about provenance, lifecycle, and collisions.
 
