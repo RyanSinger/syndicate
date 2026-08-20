@@ -1,4 +1,5 @@
--e .DS_Store
+.DS_Store
 *.swp
 .playwright-mcp/
 .scratch/
+.claude/settings.local.json
