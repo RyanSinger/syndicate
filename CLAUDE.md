@@ -15,6 +15,7 @@ The core design borrows structural separation from TurkoMatic (2011) to prevent 
 - **Meta-agent** (the main Claude session): diagnoses weaknesses, modifies skills/prompts/criteria, promotes learnings to agents or domain skills
 - **Task agent** (native subagent, starts on opus): produces the deliverable each generation. Downgrade to sonnet with evidence
 - **Coherence agent** (native subagent, always sonnet, zero tool access): watches fitness trajectories and complexity metrics only. Never sees code, prompts, or skills. Its prompt (`agents/coherence.md`) is fixed and must not be modified
+- **Judge agents** (native subagent, always sonnet, read-only tools): score each variant against criteria as an independent panel of 3. Each judge sees only goal, criteria, and one variant's output. Per-criterion median is the score; the meta-agent never edits panel scores
 
 The syndicate communicates with the user at defined moments: scope of work before gen 1, round boundary reports after each discovery phase, and a dissolution report on stopping. Mid-round, it runs autonomously.
 
@@ -25,7 +26,7 @@ The coherence firewall is the key architectural invariant. Without it, the syste
 - `.claude-plugin/marketplace.json`: Marketplace catalog (points to `plugin/` for the plugin source)
 - `plugin/`: The installable plugin (only this directory gets cached by Claude Code)
   - `plugin/.claude-plugin/plugin.json`: Plugin manifest
-  - `plugin/agents/`: Native agent definitions (task.md, coherence.md). These ship with the plugin and do not evolve. Claude Code registers them as `syndicate:task` and `syndicate:coherence`
+  - `plugin/agents/`: Native agent definitions (task.md, coherence.md, judge.md). These ship with the plugin and do not evolve. Claude Code registers them as `syndicate:task`, `syndicate:coherence`, and `syndicate:judge`
   - `plugin/skills/run/SKILL.md`: Main skill entry point (the syndicate loop definition)
   - `plugin/skills/run/references/`: architecture.md (design rationale), loop.md (procedural details for subagent invocation, metrics formats, git workflow, discovery phase)
   - `plugin/skills/run/templates/`: Bootstrapped into `syndicate/` in the user's project root when a syndicate starts
@@ -33,7 +34,7 @@ The coherence firewall is the key architectural invariant. Without it, the syste
 
 ## Key Conventions
 
-- Subagents are invoked using the Agent tool. Plugin agents (`syndicate:task`, `syndicate:coherence`) have static system prompts; dynamic context goes in the prompt parameter
+- Subagents are invoked using the Agent tool. Plugin agents (`syndicate:task`, `syndicate:coherence`, `syndicate:judge`) have static system prompts; dynamic context goes in the prompt parameter
 - Metrics files (`scores.jsonl`, `complexity.jsonl`, `coherence-log.jsonl`) are append-only JSONL in `syndicate/metrics/`
 - Branch records (`branches.jsonl`) are append-only JSONL in `syndicate/archive/`
 - Each generation may produce parallel variant branches (`gen-N-a`, `gen-N-b`, etc.) in separate worktrees. The best-scoring variant survives; others are pruned

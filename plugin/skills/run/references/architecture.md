@@ -21,6 +21,8 @@
 
 The firewall: the coherence agent's instructions are bundled with this skill and never modified. It runs as a separate invocation with a different model. It sees trajectories, not implementations.
 
+Scoring has its own separation. Each variant is graded by a panel of three independent judge agents (bundled prompt, sonnet, read-only tools), each seeing only goal, criteria, and that one variant's output. The per-criterion median across judges is the score. This keeps the meta-agent, which wrote the criteria and proposed the mutations, out of grading its own work, and damps the pointwise drift of a single LLM judge.
+
 ## Lineage
 
 - **TurkoMatic** (2011): Discovered derailment. Fixed it with structural separation.

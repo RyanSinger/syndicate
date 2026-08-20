@@ -40,7 +40,7 @@ Criteria are still hypotheses. They will evolve as the syndicate learns, but the
 
 You are in the **exploration phase**. Convergence is structurally impossible until you transition out.
 
-Make the first attempt with 2+ parallel variants taking meaningfully different approaches. Score each criterion 1 to 5 (1 = not met, 5 = fully met). Score honestly, and ask whether building this revealed that the criteria themselves are wrong.
+Make the first attempt with 2+ parallel variants taking meaningfully different approaches. Score each variant with the judge panel (see step 4 below). Then ask whether building this revealed that the criteria themselves are wrong.
 
 After scoring, perform the **criteria ratchet** (step 5 below). Document ratchet and pruning in meta-notes. Skip the coherence check for gen 1: no trajectory yet.
 
@@ -50,7 +50,7 @@ After scoring, perform the **criteria ratchet** (step 5 below). Document ratchet
 2. **Propose changes.** Exploration: 2+ variants, each a meaningfully different approach. Convergence: 1 to N based on confidence. State what each change is expected to improve and why.
    Each variant declares one mutation operator from {rewrite, constrain, decompose, invert, borrow}. Same-operator collisions in one generation do not count as diversity. See `references/loop.md` "Mutation Operators".
 3. **Attempt all in parallel.** Each variant gets its own task agent in a separate worktree (`isolation: "worktree"`), running simultaneously as a background agent. Each writes to its own output directory (`attempts/gen-N-a/`, `gen-N-b/`, ...).
-4. **Score all.** Evaluate every variant honestly. Append the winner to `scores.jsonl` (with `phase` and `ratchet`). Append all variants to `branches.jsonl`.
+4. **Score all.** Dispatch a judge panel for each variant: 3 parallel `syndicate:judge` agents, each seeing only the goal, the criteria, and that variant's output. A criterion's score is the median across judges; the variant average is the mean of medians. Panel scores are authoritative: never edit them, though you may note disagreement in meta-notes. Still read the winner's output yourself; Diagnose depends on it. Append the winner to `scores.jsonl` (with `phase` and `ratchet`). Append all variants to `branches.jsonl` with their `panel` arrays. See `references/loop.md` "Judge Panel".
 5. **Ratchet (exploration only).** Do exactly one of: (a) add a criterion the best variant doesn't already satisfy at 5, (b) split a vague criterion into sharper ones, (c) raise the bar on an existing criterion. You may also prune criteria that stopped making sense; pruning does not substitute for the ratchet. Document in meta-notes.
 6. **Coherence check on batch.** A separate agent reviews the full batch: variant scores, spread, complexity growth, provisional winner's diff stats, plus current phase and ratchet action. It returns: continue, flag, or prune. On `flag`, change your approach; each `flag` increments the plateau counter. `continue` and `prune` reset it. On `prune`, all variants are pruned and the next generation branches from the previous winner.
 7. **Merge best, clean up rest.** The highest-scoring variant wins. Squash-merge it onto `syndicate/run-<N>` as `gen-<G>: <one sentence>`. Mark all others pruned in `branches.jsonl`. Force-remove all variant worktrees and delete their branches immediately after merging.
@@ -82,7 +82,7 @@ The coherence agent is the key insight from TurkoMatic (2011): self-organizing s
 
 A wasted generation costs more than a better model. Start strong, downgrade with evidence.
 
-Start the task agent on **opus**. Downgrade to **sonnet** if evidence shows the task is simple (scores near max on first attempt, straightforward deliverable). Never change model and approach in the same generation. The coherence agent always runs on **sonnet**. Learned agents default to **sonnet**.
+Start the task agent on **opus**. Downgrade to **sonnet** if evidence shows the task is simple (scores near max on first attempt, straightforward deliverable). Never change model and approach in the same generation. The coherence agent always runs on **sonnet**. Judge agents always run on **sonnet**. Learned agents default to **sonnet**.
 
 ## What Evolves
 
@@ -97,7 +97,7 @@ Start the task agent on **opus**. Downgrade to **sonnet** if evidence shows the 
 ## What's Fixed
 
 - `goal.md`: the user's goal
-- `agents/`: core subagent prompts (task, coherence) bundled with this skill
+- `agents/`: core subagent prompts (task, coherence, judge) bundled with this skill
 - `metrics/`: append-only record
 - `venture.jsonl` (venture mode only, distilled periodically; git preserves full history)
 - `reports/`: round and dissolution reports

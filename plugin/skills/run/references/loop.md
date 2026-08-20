@@ -34,7 +34,7 @@ Replace `{{SKILLS_BLOCK}}` in the prompt with two sections:
 2. **Installed plugin skills (listed):** for each installed-plugin entry in `discovered.jsonl` whose description matches the current generation's focus, include one line: `- <name>: <description>`. These are invoked via the Skill tool at runtime; do not inline their full content. Not every installed skill appears every generation. Select based on relevance to the current Diagnose output.
 ```
 
-Dispatch all variants simultaneously. After they complete, check out each variant's branch to read its output for scoring.
+Dispatch all variants simultaneously. After they complete, dispatch a judge panel per variant (see "Judge Panel" below). Panels read each variant's output directly from its worktree, so do not remove worktrees until scoring and merging are done.
 
 **Worktree baseline-sync (mandatory).** Due to anthropics/claude-code#45371, `isolation: "worktree"` currently forks from the default branch instead of the caller's current HEAD, so the task agent will not see prior generations' winners. Every task-agent prompt MUST include this instruction:
 
@@ -44,6 +44,38 @@ Dispatch all variants simultaneously. After they complete, check out each varian
 The script checks out all files from the run branch, commits the sync, and verifies `syndicate/` landed. All variant edits sit on top of the baseline-sync commit.
 
 The meta-agent extracts each variant's incremental work with `git diff baseline-sync HEAD` and applies that delta (not the whole branch) to `syndicate/run-<N>`. Remove this workaround (script + prompt instruction) when anthropics/claude-code#45371 is fixed.
+
+### Judge Panel
+
+Each variant is scored by 3 independent `syndicate:judge` agents (always sonnet, read-only tools). Panels for all variants dispatch simultaneously: 3 judges x N variants, all in parallel.
+
+Independence is the point. A judge's prompt contains only the goal, the criteria, and the absolute path to one variant's output directory inside its worktree. Never include meta-notes, other variants, score history, prior generations, or the variant's change description.
+
+```
+Agent tool (3 per variant, run in parallel):
+  description: "Gen <N> variant <V>: judge <1|2|3>"
+  subagent_type: "syndicate:judge"
+  run_in_background: true
+  prompt: |
+    Goal:
+    <contents of goal.md>
+
+    Criteria:
+    <contents of criteria.md>
+
+    Output directory: <absolute worktree path>/syndicate/attempts/gen-<N>-<V>/
+    Score each criterion per your instructions. Respond as JSON only.
+```
+
+**Aggregation (meta-agent, after all 3 return):**
+
+- Score per criterion = median of the 3 judges' scores for that criterion.
+- Variant average = mean of the per-criterion medians.
+- Record each judge's own average in the variant's `branches.jsonl` line as `panel` (e.g. `[3.8, 4.0, 4.2]`).
+
+If a judge returns invalid JSON, retry that judge once. If still invalid, aggregate over the remaining judges (with 2, the per-criterion score is their mean; with 1, its scores stand alone) and note the dropped judge in meta-notes.
+
+Panel scores are authoritative. The meta-agent never edits them. If the meta-agent disagrees after reading the winner's output for Diagnose, it notes the disagreement in meta-notes; a recurring gap between panel scores and observed quality is a signal that the criteria are vague, which the ratchet can fix.
 
 ### Learned Agents
 
@@ -164,11 +196,11 @@ Only the winner's score is appended per generation. All variant scores live in `
 ### archive/branches.jsonl
 
 ```jsonl
-{"generation": 3, "variant": "a", "branch": "gen-3-a", "parent": "gen-2-a", "score": 3.2, "pruned": true, "operator": "rewrite", "change": "switched to grid layout"}
-{"generation": 3, "variant": "b", "branch": "gen-3-b", "parent": "gen-2-a", "score": 4.1, "pruned": false, "operator": "constrain", "change": "added responsive breakpoints"}
+{"generation": 3, "variant": "a", "branch": "gen-3-a", "parent": "gen-2-a", "score": 3.2, "panel": [3.0, 3.2, 3.4], "pruned": true, "operator": "rewrite", "change": "switched to grid layout"}
+{"generation": 3, "variant": "b", "branch": "gen-3-b", "parent": "gen-2-a", "score": 4.1, "panel": [3.9, 4.1, 4.4], "pruned": false, "operator": "constrain", "change": "added responsive breakpoints"}
 ```
 
-One line per variant. `branch` is the logical variant name (e.g., `gen-3-b`), not the ephemeral worktree branch. `parent` references the previous generation's winner. Since squash-merges land on `syndicate/run-<N>`, the parent for all variants in a generation is the tip of that branch. Only the winner has `pruned: false`.
+One line per variant. `branch` is the logical variant name (e.g., `gen-3-b`), not the ephemeral worktree branch. `parent` references the previous generation's winner. Since squash-merges land on `syndicate/run-<N>`, the parent for all variants in a generation is the tip of that branch. Only the winner has `pruned: false`. `score` is the panel aggregate (mean of per-criterion medians); `panel` lists each judge's own average, in judge order, so drift and outliers stay auditable. If a judge was dropped for invalid output, `panel` has fewer entries.
 
 ## Git Workflow
 
